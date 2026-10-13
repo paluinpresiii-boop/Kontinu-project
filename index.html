@@ -305,6 +305,21 @@ dialog form { display: flex; flex-direction: column; max-height: calc(100dvh - 2
 .seg-head h3 { margin: 0; font-size: 15px; }
 .seg-head .cnt { font-size: 12.5px; color: var(--muted); flex: 1; }
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; }
+/* Segmen STA: tinggi bisa ditarik dari pojok kanan bawah */
+.table-wrap.resizable { overflow: auto; resize: vertical; height: 340px; min-height: 160px; max-height: 85vh; position: relative; flex: none; }
+.segtable thead th { position: sticky; top: 0; z-index: 2; }
+.resize-hint { display: flex; justify-content: flex-end; gap: 6px; align-items: center; font-size: 11.5px; color: var(--muted); margin-top: -8px; }
+.resize-hint svg.i { width: 14px; height: 14px; }
+.seg-filter { height: 36px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); padding: 0 12px; font-size: 13px; max-width: 240px; }
+.segtable tr.dim { display: none; }
+.preview .seg { cursor: pointer; }
+.preview .crew { background: var(--surface); }
+/* Mode layar penuh untuk editor segmen */
+dialog.wide.full { width: calc(100% - 24px); height: calc(100dvh - 24px); max-height: none; }
+dialog.wide.full form { height: 100%; }
+dialog.wide.full .dlg-body { flex: 1 1 auto; min-height: 0; }
+dialog.wide.full .table-wrap.resizable { height: calc(100dvh - 210px) !important; min-height: 260px; max-height: none; resize: none; }
+dialog.wide.full .resize-hint { display: none; }
 table.segtable { border-collapse: collapse; width: 100%; min-width: 960px; font-size: 13px; }
 .segtable th { text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; padding: 10px 8px; background: var(--surface-2); border-bottom: 1px solid var(--line); white-space: nowrap; }
 .segtable td { padding: 6px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
@@ -415,7 +430,10 @@ svg.gbtn { width: 16px; height: 16px; flex: none; }
   <form id="formJenis" novalidate>
     <div class="dlg-head">
       <div><h2 id="dJTitle">Stripmap</h2><p id="dJSub"></p></div>
-      <button type="button" class="icon-btn" data-close aria-label="Tutup"><svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      <div style="display:flex;gap:2px">
+        <button type="button" class="icon-btn" id="btnJFull" aria-pressed="false" aria-label="Perbesar jendela ke layar penuh" title="Layar penuh"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+        <button type="button" class="icon-btn" data-close aria-label="Tutup"><svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
     </div>
     <div class="dlg-body">
       <div class="grid2">
@@ -423,19 +441,21 @@ svg.gbtn { width: 16px; height: 16px; flex: none; }
         <label class="field"><span>STA akhir (100%)</span><input id="jAkhir" class="mono" inputmode="decimal" autocomplete="off" placeholder="1+000"><small class="err" id="jRangeErr"></small></label>
       </div>
       <div class="preview" aria-label="Pratinjau stripmap">
-        <div class="cap"><span>Pratinjau</span><span id="jPvStat"></span></div>
+        <div class="cap"><span>Pratinjau · arahkan kursor ke segmen untuk detail, klik untuk membuka barisnya</span><span id="jPvStat"></span></div>
         <div id="jPv"></div>
       </div>
       <div class="seg-head">
         <h3>Segmen STA</h3><span class="cnt" id="jSegCount"></span>
+        <span data-nodirty><label class="sr" for="jFilter">Tampilkan item</label><select id="jFilter" class="seg-filter"></select></span>
         <button type="button" class="btn btn-sm" id="btnAddRow"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>Tambah segmen</button>
       </div>
-      <div class="table-wrap">
+      <div class="table-wrap resizable" id="jTableWrap">
         <table class="segtable">
           <thead><tr><th>#</th><th>Item pekerjaan</th><th>Dari STA</th><th>Sampai STA</th><th>Panjang</th><th>Status</th><th>Tanggal</th><th>Jumlah Pekerja</th><th><span class="sr">Aksi</span></th></tr></thead>
           <tbody id="jBody"></tbody>
         </table>
       </div>
+      <div class="resize-hint" aria-hidden="true">Tarik pojok kanan bawah tabel untuk memperbesar <svg class="i" viewBox="0 0 24 24"><path d="M21 15 15 21M21 9 9 21"/></svg></div>
     </div>
     <div class="dlg-foot">
       <span class="spacer"></span>
@@ -934,6 +954,9 @@ const CONFIG = {
       ${g.pekerja != null && g.pekerja !== "" ? `<div>${esc(nf.format(+g.pekerja))} pekerja</div>` : ""}
       ${g.catatan ? `<div class="mut">${esc(g.catatan)}</div>` : ""}`;
     const r = el.getBoundingClientRect();
+    // modal dialogs render in the top layer, so the tooltip must live inside the open dialog to be visible
+    const host = el.closest("dialog[open]") || document.body;
+    if (tip.parentElement !== host) host.appendChild(tip);
     tip.classList.add("on");
     const tw = tip.offsetWidth, th = tip.offsetHeight;
     let x = r.left + r.width / 2 - tw / 2; x = Math.max(8, Math.min(x, innerWidth - tw - 8));
@@ -997,11 +1020,33 @@ const CONFIG = {
   const strip = (o) => { const { id, ...rest } = o; return clone(rest); };
 
   /* ---------- Dialog helpers ---------- */
-  document.addEventListener("click", (e) => { const c = e.target.closest("[data-close]"); if (c) c.closest("dialog").close(); });
+  // ----- Perubahan belum disimpan: snapshot isian form saat dibuka, bandingkan saat akan ditutup -----
+  const GUARDED = ["#dlgJenis", "#dlgRuas", "#dlgName", "#dlgSet"].map((x) => $(x));
+  const formState = (dlg) => $$("input, select, textarea", dlg).filter((el) => !el.closest("[data-nodirty]"))
+    .map((el) => (el.type === "checkbox" || el.type === "radio" ? (el.checked ? "1" : "0") : el.value)).join("\u0001");
+  const markClean = (dlg) => { dlg._snap = formState(dlg); };
+  const isDirty = (dlg) => dlg.open && dlg._snap !== undefined && dlg._snap !== formState(dlg);
+  async function requestClose(dlg) {
+    if (!isDirty(dlg)) { dlg.close(); return true; }
+    const ok = await confirmBox("Tutup tanpa menyimpan?", "Ada perubahan yang belum disimpan. Jika jendela ditutup sekarang, perubahan tersebut akan hilang.", "Buang perubahan", { no: "Lanjut mengedit" });
+    if (ok) dlg.close();
+    return ok;
+  }
+  GUARDED.forEach((dlg) => {
+    dlg.addEventListener("cancel", (e) => { if (isDirty(dlg)) { e.preventDefault(); requestClose(dlg); } });
+    dlg.addEventListener("close", () => { dlg._snap = undefined; hideTip(); });
+  });
+  window.addEventListener("beforeunload", (e) => { if (GUARDED.some(isDirty)) { e.preventDefault(); e.returnValue = ""; } });
+  document.addEventListener("click", (e) => {
+    const c = e.target.closest("[data-close]"); if (!c) return;
+    const dlg = c.closest("dialog");
+    GUARDED.includes(dlg) ? requestClose(dlg) : dlg.close();
+  });
 
-  function confirmBox(title, msg, yes = "Hapus") {
+  function confirmBox(title, msg, yes = "Hapus", { no = "Batal", tone = "danger" } = {}) {
     const d = $("#dlgConfirm");
-    $("#cTitle").textContent = title; $("#cMsg").textContent = msg; $("#cYes").textContent = yes;
+    $("#cTitle").textContent = title; $("#cMsg").textContent = msg; $("#cYes").textContent = yes; $("#cNo").textContent = no;
+    $("#cYes").className = "btn " + (tone === "primary" ? "btn-primary" : "btn-danger");
     return new Promise((res) => {
       const done = (v) => { d.close(); cleanup(); res(v); };
       const onYes = (e) => { e.preventDefault(); done(true); };
@@ -1009,9 +1054,10 @@ const CONFIG = {
       const onCancel = () => { cleanup(); res(false); };
       const cleanup = () => { $("#formConfirm").removeEventListener("submit", onYes); $("#cNo").removeEventListener("click", onNo); d.removeEventListener("cancel", onCancel); };
       $("#formConfirm").addEventListener("submit", onYes); $("#cNo").addEventListener("click", onNo); d.addEventListener("cancel", onCancel);
-      d.showModal(); $("#cNo").focus();
+      d.showModal(); (tone === "primary" ? $("#cYes") : $("#cNo")).focus();
     });
   }
+  const confirmSave = (title, msg) => confirmBox(title, msg, "Simpan", { no: "Kembali", tone: "primary" });
 
   let nameCb = null;
   function nameBox({ title, label, value = "", placeholder = "", parent, onSave }) {
@@ -1019,12 +1065,15 @@ const CONFIG = {
     const inp = $("#nInput"); inp.value = value; inp.placeholder = placeholder; inp.removeAttribute("aria-invalid"); $("#nErr").textContent = "";
     $("#nParentWrap").hidden = !parent;
     if (parent) { $("#nParentLabel").textContent = parent.label; $("#nParent").innerHTML = parent.options.map((o) => `<option value="${esc(o.id)}">${esc(o.nama)}</option>`).join(""); $("#nParent").value = parent.value; }
-    nameCb = onSave; $("#dlgName").showModal(); inp.focus(); inp.select();
+    nameCb = onSave; $("#dlgName").showModal(); markClean($("#dlgName")); inp.focus(); inp.select();
   }
   $("#formName").addEventListener("submit", async (e) => {
     e.preventDefault();
     const v = $("#nInput").value.trim();
     if (!v) { $("#nErr").textContent = "Isi nama terlebih dahulu."; $("#nInput").setAttribute("aria-invalid", "true"); $("#nInput").focus(); return; }
+    if (!isDirty($("#dlgName"))) { $("#dlgName").close(); toast("Tidak ada perubahan"); return; }
+    const parentTxt = $("#nParentWrap").hidden ? "" : ` di ${$("#nParent").selectedOptions[0]?.textContent || ""}`;
+    if (!(await confirmSave(`${$("#nTitle").textContent}?`, `“${v}”${parentTxt} akan disimpan.`))) return;
     const btn = $("#nSave"); btn.disabled = true;
     const ok = await nameCb(v, $("#nParentWrap").hidden ? null : $("#nParent").value);
     btn.disabled = false;
@@ -1118,7 +1167,7 @@ const CONFIG = {
           <label class="field"><span>STA akhir (100%)</span><input class="mono" data-jb inputmode="decimal" autocomplete="off" value="${b ? fmtSTA(b.staAkhir) : ""}" placeholder="mis. 1+200"><small class="err" data-je></small></label>
         </div></div>`;
     }).join("");
-    dlgRuas.showModal(); $("#rKode").focus();
+    dlgRuas.showModal(); markClean(dlgRuas); $("#rKode").focus();
   }
   $("#rJenis").addEventListener("change", (e) => {
     if (!e.target.matches("[data-jc]")) return;
@@ -1148,7 +1197,12 @@ const CONFIG = {
     // keep blocks for jenis not in the current master untouched
     Object.keys(draftR.jenis || {}).forEach((jid) => { if (!S.master.some((j) => j.id === jid)) jenis[jid] = draftR.jenis[jid]; });
     if (firstBad) { firstBad.focus(); return; }
-    if (dropped.length && !(await confirmBox("Hapus jenis pekerjaan?", `Segmen pada ${dropped.join(", ")} di ruas ini akan ikut terhapus.`))) return;
+    if (!isDirty(dlgRuas)) { dlgRuas.close(); toast("Tidak ada perubahan"); return; }
+    if (dropped.length) { if (!(await confirmBox("Simpan dan hapus jenis pekerjaan?", `Segmen pada ${dropped.join(", ")} di ruas ini akan ikut terhapus.`, "Simpan & hapus", { no: "Kembali" }))) return; }
+    else {
+      const jn = S.master.filter((j) => jenis[j.id]).map((j) => j.nama.replace(/^Pekerjaan\s+/i, ""));
+      if (!(await confirmSave(draftR.isNew ? "Tambah kode ruas?" : "Simpan perubahan kode ruas?", `Ruas “${kode}”${jn.length ? ` dengan jenis pekerjaan: ${jn.join(", ")}` : " tanpa jenis pekerjaan"} akan disimpan.`))) return;
+    }
     const body = { diId: $("#rDi").value, kode, ket: $("#rKet").value.trim(), order: draftR.order ?? Date.now(), jenis };
     if (draftR.wasContoh && $("#rContoh").checked) body.contoh = true;
     const btn = $("#btnSaveRuas"); btn.disabled = true;
@@ -1177,14 +1231,17 @@ const CONFIG = {
     // urutkan berdasarkan tanggal pengerjaan: terdahulu → terbaru (tanpa tanggal di akhir), lalu urutan item, lalu STA
     const itemIdx = (id) => j.items.findIndex((it) => it.id === id);
     rows.sort((p, q) => (p.tanggal || "9999") .localeCompare(q.tanggal || "9999") || itemIdx(p.item) - itemIdx(q.item) || parseSTA(p.dariTxt) - parseSTA(q.dariTxt));
-    draftJ = { ruasId, jid, awalTxt: fmtSTA(b.staAwal), akhirTxt: fmtSTA(b.staAkhir), rows };
+    draftJ = { ruasId, jid, awalTxt: fmtSTA(b.staAwal), akhirTxt: fmtSTA(b.staAkhir), rows, filter: "", orig: new Map(rows.map((g) => [g.id, JSON.stringify(g)])), origRange: fmtSTA(b.staAwal) + "|" + fmtSTA(b.staAkhir) };
+    $("#jFilter").innerHTML = `<option value="">Semua item</option>` + j.items.map((it) => `<option value="${esc(it.id)}">${esc(it.nama)}</option>`).join("");
+    $("#jFilter").value = "";
     const D = byId(S.di, r.diId);
     $("#dJTitle").textContent = j.nama;
     $("#dJSub").textContent = `Ruas ${r.kode}${D ? " · " + D.nama : ""}`;
     $("#jAwal").value = draftJ.awalTxt; $("#jAkhir").value = draftJ.akhirTxt;
     $("#jAwal").removeAttribute("aria-invalid"); $("#jAkhir").removeAttribute("aria-invalid"); $("#jRangeErr").textContent = "";
     renderRows(); updateJPreview();
-    dlgJ.showModal();
+    try { const h = localStorage.getItem("sm2-seg-h"); if (h) $("#jTableWrap").style.height = h; } catch {}
+    dlgJ.showModal(); markClean(dlgJ);
     const idx = focusSegId ? draftJ.rows.findIndex((x) => x.id === focusSegId) : -1;
     if (idx >= 0) { const tr = $(`#jBody tr[data-i="${idx}"]`); tr.classList.add("flash"); tr.scrollIntoView({ block: "nearest" }); tr.querySelector('[data-f="dariTxt"]').focus(); }
     else if (!draftJ.rows.length) $("#btnAddRow").focus();
@@ -1194,7 +1251,7 @@ const CONFIG = {
     $("#jSegCount").textContent = draftJ.rows.length ? `${draftJ.rows.length} segmen` : "";
     if (!draftJ.rows.length) { body.innerHTML = `<tr><td colspan="9" class="seg-empty">Belum ada segmen. Tambahkan rentang STA yang sudah atau sedang dikerjakan untuk tiap item.</td></tr>`; return; }
     const opts = (sel) => j.items.map((it) => `<option value="${esc(it.id)}"${it.id === sel ? " selected" : ""}>${esc(it.nama)}</option>`).join("");
-    body.innerHTML = draftJ.rows.map((g, i) => `<tr data-i="${i}">
+    body.innerHTML = draftJ.rows.map((g, i) => `<tr data-i="${i}"${draftJ.filter && g.item !== draftJ.filter ? ' class="dim"' : ""}>
       <td class="n">${i + 1}</td>
       <td><select class="inp" data-f="item" aria-label="Segmen ${i + 1}, item pekerjaan" style="min-width:220px">${opts(g.item)}</select></td>
       <td><input class="inp mono" data-f="dariTxt" value="${esc(g.dariTxt)}" aria-label="Segmen ${i + 1}, dari STA" inputmode="decimal" style="width:108px"><small class="err" data-err></small></td>
@@ -1208,6 +1265,38 @@ const CONFIG = {
       <td class="act"><button type="button" class="icon-btn" data-dup="${i}" aria-label="Duplikat segmen ${i + 1} untuk item berikutnya">${ICON.copy}</button><button type="button" class="icon-btn danger" data-del="${i}" aria-label="Hapus segmen ${i + 1}">${ICON.trash}</button></td>
     </tr>`).join("");
     draftJ.rows.forEach((_, i) => updateLen(i));
+    const shown = draftJ.filter ? draftJ.rows.filter((g) => g.item === draftJ.filter).length : draftJ.rows.length;
+    $("#jSegCount").textContent = draftJ.filter ? `${shown} dari ${draftJ.rows.length} segmen` : `${draftJ.rows.length} segmen`;
+  }
+  function focusRow(segId) {
+    const i = draftJ.rows.findIndex((x) => x.id === segId); if (i < 0) return;
+    if (draftJ.filter && draftJ.rows[i].item !== draftJ.filter) { draftJ.filter = ""; $("#jFilter").value = ""; renderRows(); }
+    const tr = $(`#jBody tr[data-i="${i}"]`); if (!tr) return;
+    tr.classList.remove("flash"); void tr.offsetWidth; tr.classList.add("flash");
+    tr.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    tr.querySelector('[data-f="dariTxt"]').focus({ preventScroll: true });
+  }
+  $("#jFilter").addEventListener("change", (e) => { draftJ.filter = e.target.value; renderRows(); });
+  $("#jPv").addEventListener("click", (e) => {
+    const el = e.target.closest("[data-seg]"); if (!el) return;
+    const f = segFor(el); if (f?.g?.id) { hideTip(); focusRow(f.g.id); }
+  });
+  $("#jPv").addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const el = e.target.closest("[data-seg]"); if (!el) return;
+    e.preventDefault(); const f = segFor(el); if (f?.g?.id) focusRow(f.g.id);
+  });
+  $("#btnJFull").addEventListener("click", () => {
+    const on = !dlgJ.classList.contains("full");
+    dlgJ.classList.toggle("full", on); $("#btnJFull").setAttribute("aria-pressed", String(on));
+    $("#btnJFull").setAttribute("aria-label", on ? "Kembalikan ukuran jendela" : "Perbesar jendela ke layar penuh");
+  });
+  // remember the table height the editor dragged to
+  if (window.ResizeObserver) {
+    let rT; new ResizeObserver(() => {
+      if (!dlgJ.open || dlgJ.classList.contains("full")) return;
+      clearTimeout(rT); rT = setTimeout(() => { try { localStorage.setItem("sm2-seg-h", $("#jTableWrap").style.height || ""); } catch {} }, 300);
+    }).observe($("#jTableWrap"));
   }
   function updateLen(i) {
     const g = draftJ.rows[i]; const cell = $(`#jBody tr[data-i="${i}"] [data-len]`); if (!cell) return;
@@ -1224,7 +1313,7 @@ const CONFIG = {
     PV = { id: draftJ.ruasId, jenis: { [j.id]: b } };
     if (!(isFinite(b.staAwal) && isFinite(b.staAkhir) && b.staAkhir > b.staAwal)) { $("#jPv").innerHTML = `<div class="empty-sm">Isi STA awal dan akhir untuk melihat pratinjau.</div>`; $("#jPvStat").textContent = ""; return; }
     const c = blockCalc(b, j);
-    $("#jPv").innerHTML = itemsHTML(PV, j, c, false);
+    $("#jPv").innerHTML = crewHTML(c) + itemsHTML(PV, j, c, false);
     $("#jPvStat").textContent = `${c.items.length > 1 ? "Kumulatif" : "Selesai"} ${fmtPct(c.kum)} · ${fmtLen(c.L)}`;
   }
   $("#jAwal").addEventListener("input", (e) => { draftJ.awalTxt = e.target.value; updateJPreview(); });
@@ -1288,7 +1377,21 @@ const CONFIG = {
       if (pk !== null && !(Number.isInteger(pk) && pk >= 0)) return bad(ip, ep, "Isi bilangan bulat, mis. 12.");
       (items[g.item] ||= []).push({ id: g.id, dari: p, sampai: q, status: g.status, tanggal: g.tanggal || "", pekerja: pk, catatan: String(g.catatan || "").trim() });
     });
-    if (firstBad) { firstBad.focus(); toast("Periksa kolom yang ditandai merah.", true); return; }
+    if (firstBad) {
+      if (draftJ.filter && firstBad.closest("tr.dim")) { draftJ.filter = ""; $("#jFilter").value = ""; renderRows(); }
+      firstBad.focus(); toast("Periksa kolom yang ditandai merah.", true); return;
+    }
+    if (!isDirty(dlgJ)) { dlgJ.close(); toast("Tidak ada perubahan"); return; }
+    {
+      const now = new Map(draftJ.rows.map((g) => [g.id, JSON.stringify(g)]));
+      let add = 0, chg = 0, del = 0;
+      now.forEach((v, id) => { if (!draftJ.orig.has(id)) add++; else if (draftJ.orig.get(id) !== v) chg++; });
+      draftJ.orig.forEach((_, id) => { if (!now.has(id)) del++; });
+      const parts = [add && `${add} segmen baru`, chg && `${chg} segmen diubah`, del && `${del} segmen dihapus`].filter(Boolean);
+      if (draftJ.origRange !== fmtSTA(a) + "|" + fmtSTA(b)) parts.push(`rentang STA menjadi ${fmtSTA(a)} – ${fmtSTA(b)}`);
+      const rr = byId(S.ruas, draftJ.ruasId);
+      if (!(await confirmSave("Simpan perubahan segmen?", `${jDef().nama} · Ruas ${rr?.kode ?? ""}: ${parts.length ? parts.join(", ") : "perubahan detail segmen"}. Total ${draftJ.rows.length} segmen akan disimpan.`))) return;
+    }
     Object.values(items).forEach((arr) => arr.sort((x, y) => x.dari - y.dari));
     const r = byId(S.ruas, draftJ.ruasId);
     if (!r) { toast("Ruas ini sudah dihapus orang lain.", true); dlgJ.close(); return; }
@@ -1308,7 +1411,7 @@ const CONFIG = {
   function openSettings() {
     draftM = clone(S.master);
     $("#sJudul").value = S.judul || ""; $("#sErr").textContent = "";
-    renderMaster(); $("#dlgSet").showModal(); $("#sJudul").focus();
+    renderMaster(); $("#dlgSet").showModal(); markClean($("#dlgSet")); $("#sJudul").focus();
   }
   function renderMaster() {
     $("#sMaster").innerHTML = draftM.map((j, ji) => `<div class="mset" data-ji="${ji}">
@@ -1336,10 +1439,12 @@ const CONFIG = {
     draftM.forEach((j) => { j.nama = j.nama.trim(); j.items.forEach((it) => (it.nama = it.nama.trim())); });
     const blank = draftM.find((j) => !j.nama || !j.items.length || j.items.some((it) => !it.nama));
     if (!draftM.length || blank) { $("#sErr").textContent = "Setiap jenis pekerjaan perlu nama dan minimal satu item bernama."; return; }
+    if (!isDirty($("#dlgSet"))) { $("#dlgSet").close(); toast("Tidak ada perubahan"); return; }
     const keptJ = new Set(draftM.map((j) => j.id)), keptI = new Set(draftM.flatMap((j) => j.items.map((it) => j.id + "/" + it.id)));
     let lost = 0;
     S.ruas.forEach((r) => Object.entries(r.jenis || {}).forEach(([jid, b]) => Object.entries(b.items || {}).forEach(([iid, arr]) => { if (!keptJ.has(jid) || !keptI.has(jid + "/" + iid)) lost += arr.length; })));
-    if (lost && !(await confirmBox("Hapus item pekerjaan?", `${lost} segmen pada jenis/item yang dihapus tidak akan ditampilkan lagi dan tidak dihitung dalam persen.`, "Simpan"))) return;
+    if (lost) { if (!(await confirmBox("Simpan dan hapus item pekerjaan?", `${lost} segmen pada jenis/item yang dihapus tidak akan ditampilkan lagi dan tidak dihitung dalam persen.`, "Simpan", { no: "Kembali" }))) return; }
+    else if (!(await confirmSave("Simpan pengaturan?", `Nama proyek dan daftar ${draftM.length} jenis pekerjaan (${draftM.reduce((n, j) => n + j.items.length, 0)} item) akan disimpan.`))) return;
     const btn = $("#sSave"); btn.disabled = true;
     const judul = $("#sJudul").value.trim();
     const ok = await write(async () => {
@@ -1668,4 +1773,4 @@ const CONFIG = {
 </script>
 </body>
 </html>
-<!-- kontinù build 2026-10-13 · uji auto-deploy Hostinger -->
+<!-- kontinù build 2026-10-13 · konfirmasi tutup/simpan, tabel segmen bisa diperbesar, detail segmen di pratinjau -->
