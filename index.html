@@ -1,0 +1,1670 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Infra 1 Project Integrated System">
+<title>Infra1 Project</title>
+<link rel="icon" type="image/png" sizes="32x32" href="logo/favicon-32.png">
+<link rel="icon" type="image/png" href="logo/icon-navy.png" media="(prefers-color-scheme: light)">
+<link rel="icon" type="image/png" href="logo/icon-white.png" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="logo/app-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: soft rounded app shell — top bar, paket tabs, stat tiles, then navigator (Kabupaten › D.I.) beside the stripmap board (Kode ruas › Jenis pekerjaan › Item bars on one STA scale) */
+:root {
+  --bg: #e4e7ec;
+  --shell: #f1f3f6;
+  --surface: #ffffff;
+  --surface-2: #f5f6f8;
+  --line: #e2e5ea;
+  --fg: #15181d;
+  --muted: #5b626e;
+  --track: #dcdfe4;
+  --seg: #f5c62c;
+  --seg-soft: #fbe8a6;
+  --seg-edge: #c99700;
+  --seg-ink: #3d3000;
+  --kum: #a77800;
+  --accent: #2f66f5;
+  --danger: #c93434;
+  --shadow: 0 1px 2px rgba(20, 28, 45, .05), 0 10px 30px rgba(20, 28, 45, .06);
+  --shadow-sm: 0 1px 2px rgba(20, 28, 45, .06), 0 2px 8px rgba(20, 28, 45, .05);
+  --scrim: rgba(18, 22, 30, .42);
+  --font-ui: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r-lg: 24px;
+  --r-md: 16px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1013; --shell: #15181c; --surface: #1b1f24; --surface-2: #22262c; --line: #2c3239;
+    --fg: #eceef1; --muted: #a2a9b4; --track: #2f353d; --seg: #f2c230; --seg-soft: #5a4a14;
+    --seg-edge: #a87f00; --seg-ink: #2a2000; --kum: #e6b325; --accent: #7b9cff; --danger: #f07070;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.25); --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+    --scrim: rgba(0,0,0,.6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1013; --shell: #15181c; --surface: #1b1f24; --surface-2: #22262c; --line: #2c3239;
+  --fg: #eceef1; --muted: #a2a9b4; --track: #2f353d; --seg: #f2c230; --seg-soft: #5a4a14;
+  --seg-edge: #a87f00; --seg-ink: #2a2000; --kum: #e6b325; --accent: #7b9cff; --danger: #f07070;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.25); --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+  --scrim: rgba(0,0,0,.6);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+img { max-width: 100%; }
+body { margin: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); min-height: 100dvh;  background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+button, input, select { font: inherit; color: inherit; }
+svg.i { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.app { max-width: 1440px; margin: 0 auto; padding-block: 20px 48px; padding-inline: 16px; display: flex; flex-direction: column; gap: 14px; }
+@media (min-width: 900px) { .app { padding-inline: 28px; padding-block: 28px 64px; } }
+
+/* Top bar */
+.topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; background: var(--shell); border-radius: var(--r-lg); padding: 10px; box-shadow: var(--shadow-sm); }
+.brand { display: flex; align-items: center; gap: 12px; padding-right: 8px; min-width: 0; }
+.logo { width: 44px; height: 44px; border-radius: 14px; background: var(--surface); display: grid; place-items: center; color: var(--accent); box-shadow: var(--shadow-sm); flex: none; }
+.logo svg.i { width: 24px; height: 24px; stroke-width: 2; }
+/* Brand logo: dark icon on light theme, light icon on dark theme */
+.logo.brandmark { background: var(--surface); padding: 6px; overflow: hidden; border-radius: 12px; }
+.logo.brandmark svg { display: block; width: 100%; height: 100%; }
+.logo.brandmark .on-dark { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .logo.brandmark .on-light { display: none; }
+  :root:not([data-theme="light"]) .logo.brandmark .on-dark { display: block; }
+}
+:root[data-theme="dark"] .logo.brandmark .on-light { display: none; }
+:root[data-theme="dark"] .logo.brandmark .on-dark { display: block; }
+.brand strong { display: block; font-size: 15px; font-weight: 700; line-height: 1.2; }
+.brand span { display: block; font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+.search { flex: 1 1 240px; min-width: 0; display: flex; align-items: center; gap: 8px; background: var(--surface); border-radius: 999px; padding: 0 16px; height: 44px; box-shadow: var(--shadow-sm); color: var(--muted); }
+.search input { border: 0; background: transparent; outline: none; flex: 1; min-width: 0; color: var(--fg); height: 100%; }
+.search:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 18px; border-radius: 999px; border: 0; background: var(--surface); color: var(--fg); font-weight: 600; font-size: 14px; cursor: pointer; box-shadow: var(--shadow-sm); transition: transform .12s ease, background-color .15s ease, opacity .15s; white-space: nowrap; touch-action: manipulation; }
+.btn:hover { background: var(--surface-2); }
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--fg); color: var(--surface); }
+.btn-primary:hover { background: var(--fg); opacity: .88; }
+.btn-sm { height: 36px; padding: 0 14px; font-size: 13.5px; }
+.btn-xs { height: 32px; padding: 0 12px; font-size: 12.5px; gap: 6px; }
+.btn-xs svg.i { width: 15px; height: 15px; }
+.btn-ghost { background: transparent; box-shadow: none; }
+.btn-danger-ghost { background: transparent; box-shadow: none; color: var(--danger); }
+.btn-danger-ghost:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: var(--danger); opacity: .9; }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+.icon-btn { width: 36px; height: 36px; border-radius: 999px; border: 0; background: transparent; color: var(--muted); display: inline-grid; place-items: center; cursor: pointer; transition: background-color .15s, color .15s; flex: none; }
+.icon-btn:hover { background: var(--surface-2); color: var(--fg); }
+.icon-btn.danger:hover { color: var(--danger); }
+.icon-btn svg.i { width: 17px; height: 17px; }
+.icon-btn.sm { width: 30px; height: 30px; }
+.icon-btn.sm svg.i { width: 15px; height: 15px; }
+
+.banner { background: var(--seg-soft); color: var(--fg); border-radius: var(--r-md); padding: 12px 16px; font-size: 14px; }
+.ro [data-edit] { display: none !important; }
+
+/* Paket tabs */
+.paketbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tabs { display: flex; gap: 6px; padding: 5px; background: var(--shell); border-radius: 999px; box-shadow: var(--shadow-sm); overflow-x: auto; max-width: 100%; }
+.tab { flex: none; height: 38px; padding: 0 18px; border-radius: 999px; border: 0; background: transparent; font-weight: 600; font-size: 14px; color: var(--muted); cursor: pointer; transition: background-color .15s, color .15s; }
+.tab:hover { color: var(--fg); }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--fg); box-shadow: var(--shadow-sm); }
+.tab.add { color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+.tab.add svg.i { width: 16px; height: 16px; }
+.paket-tools { display: flex; gap: 2px; }
+
+/* Stats */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.stat { background: var(--surface); border-radius: var(--r-md); padding: 16px 18px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.stat .k { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.stat .v { font-size: 26px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.stat .v small { font-size: 14px; font-weight: 600; color: var(--muted); margin-left: 3px; }
+.stat .s { font-size: 12.5px; color: var(--muted); }
+.stat .mini { height: 6px; border-radius: 999px; background: var(--track); margin-top: 6px; overflow: hidden; }
+.stat .mini i { display: block; height: 100%; background: var(--kum); border-radius: 999px; }
+.stat.hl { background: var(--seg); color: var(--seg-ink); }
+.stat.hl .k, .stat.hl .s, .stat.hl .v small { color: color-mix(in srgb, var(--seg-ink) 78%, transparent); }
+
+/* Layout */
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (min-width: 1040px) {
+  .layout { grid-template-columns: 310px minmax(0, 1fr); }
+  .nav { position: sticky; top: calc(16px + env(safe-area-inset-top, 0px)); max-height: calc(100dvh - 32px); overflow: auto; }
+  .nav > summary { display: none; }
+}
+.nav { background: var(--shell); border-radius: var(--r-lg); padding: 14px; box-shadow: var(--shadow-sm); }
+.nav > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 700; min-height: 32px; }
+.nav > summary::-webkit-details-marker { display: none; }
+.nav > summary .cur { font-weight: 500; color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav[open] > summary { margin-bottom: 10px; }
+.nav-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 4px 10px; }
+.nav-head h2 { margin: 0; font-size: 13px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.nkab { padding: 10px 4px 6px; }
+.nkab + .nkab { border-top: 1px solid var(--line); }
+.nkab-h { display: flex; align-items: center; gap: 4px; }
+.nkab-h .nm { flex: 1; min-width: 0; display: flex; align-items: stretch; gap: 8px; }
+.nkab-h .nm::before { content: ""; width: 2px; border-radius: 2px; background: var(--fg); flex: none; }
+.nkab-h h3 { margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .02em; line-height: 1.3; overflow-wrap: anywhere; }
+.ndi { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.ndi-btn { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; width: 100%; text-align: left; border: 0; background: transparent; border-radius: 12px; padding: 9px 12px; cursor: pointer; transition: background-color .15s; }
+.ndi-btn:hover { background: var(--surface-2); }
+.ndi-btn[aria-current="true"] { background: var(--surface); box-shadow: var(--shadow-sm); }
+.ndi-btn .n { font-size: 13.5px; font-weight: 600; overflow-wrap: anywhere; }
+.ndi-btn .p { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ndi-btn .c { font-size: 11.5px; color: var(--muted); grid-column: 1 / -1; }
+.ndi-empty { font-size: 12.5px; color: var(--muted); padding: 6px 12px; }
+
+/* Board */
+.board { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 20px 16px 24px; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+@media (min-width: 700px) { .board { padding: 26px 28px 30px; } }
+.board-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 20px; }
+.crumb { font-size: 13px; color: var(--muted); font-weight: 500; margin-bottom: 4px; }
+h1.title { margin: 0; font-size: clamp(26px, 3.4vw, 38px); font-weight: 800; letter-spacing: -.02em; line-height: 1.05; text-transform: uppercase; text-wrap: balance; overflow-wrap: anywhere; }
+.head-tools { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.rollup { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill { display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--surface-2); font-size: 12.5px; color: var(--muted); font-weight: 500; }
+.pill b { color: var(--fg); font-variant-numeric: tabular-nums; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 12.5px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 22px; height: 10px; border-radius: 3px; display: inline-block; }
+.sw.done { background: var(--seg); box-shadow: inset 0 0 0 1px var(--seg-edge); }
+.sw.prog { background: repeating-linear-gradient(135deg, var(--seg) 0 3px, var(--seg-soft) 3px 6px); box-shadow: inset 0 0 0 1px var(--seg-edge); }
+.sw.none { background: var(--track); }
+.sw.kum { background: var(--kum); }
+
+.ruas-list { display: flex; flex-direction: column; gap: 18px; }
+.ruas { border: 1px solid var(--line); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+@media (min-width: 700px) { .ruas { padding: 18px 22px 20px; } }
+.ruas-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 16px; }
+.ruas-id { display: flex; align-items: stretch; gap: 10px; min-width: 0; }
+.ruas-id::before { content: ""; width: 2px; border-radius: 2px; background: var(--fg); flex: none; }
+.ruas-id .lbl { font-size: 11.5px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.ruas-id h2 { margin: 0; font-size: 19px; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
+.ruas-id p { margin: 2px 0 0; font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+.tag { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: var(--surface-2); color: var(--muted); border: 1px dashed var(--line); margin-left: 6px; vertical-align: 3px; }
+.ruas-tools { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+
+.jblock { background: var(--surface-2); border-radius: 16px; padding: 14px 14px 10px; display: flex; flex-direction: column; gap: 6px; }
+@media (min-width: 700px) { .jblock { padding: 16px 18px 12px; } }
+.jhead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px; padding-bottom: 6px; }
+.jhead h3 { margin: 0; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: .02em; }
+.jhead .sta { font-size: 12px; color: var(--muted); }
+.jhead .r { display: flex; align-items: center; gap: 10px; }
+.kumv { display: flex; align-items: baseline; gap: 6px; }
+.kumv b { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.kumv span { font-size: 12px; color: var(--muted); }
+.crew { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: -2px 0 6px; padding: 8px 12px; border-radius: 12px; background: var(--surface); font-size: 12.5px; }
+.crew svg.i { width: 16px; height: 16px; color: var(--muted); }
+.crew .lbl { color: var(--muted); font-weight: 600; }
+.crew b { font-size: 14px; font-variant-numeric: tabular-nums; }
+.crew .dt { color: var(--muted); }
+.crew .br { color: var(--muted); flex-basis: 100%; font-size: 12px; }
+@media (min-width: 700px) { .crew .br { flex-basis: auto; } .crew .br::before { content: "· "; } }
+
+.irow { display: grid; grid-template-columns: minmax(140px, 220px) minmax(0, 1fr) 64px; gap: 4px 14px; align-items: center; padding: 4px 0; }
+.irow .lab { font-size: 13px; font-weight: 500; line-height: 1.3; overflow-wrap: anywhere; }
+.irow .pc { text-align: right; font-weight: 700; font-size: 13.5px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.irow .pc small { display: block; font-weight: 500; font-size: 10.5px; color: var(--muted); }
+.irow.rl { padding: 0; }
+.irow.kum { border-top: 1px dashed var(--line); margin-top: 2px; padding-top: 10px; }
+.irow.kum .lab { font-weight: 800; }
+.irow.kum .pc { font-size: 15px; }
+@media (max-width: 640px) {
+  .irow { grid-template-columns: minmax(0, 1fr) auto; }
+  .irow .bar { grid-column: 1 / -1; grid-row: 2; }
+  .irow.rl .lab, .irow.rl .pc { display: none; }
+  .irow.rl .bar { grid-row: auto; }
+}
+
+.track { position: relative; height: 12px; border-radius: 999px; background: var(--track); }
+.track.k { overflow: hidden; }
+.track.k .fill { height: 100%; background: var(--kum); border-radius: 999px; }
+.seg { position: absolute; top: 0; bottom: 0; background: var(--seg); border: 0; padding: 0; border-radius: 3px; box-shadow: inset -1.5px 0 0 var(--seg-edge), inset 1.5px 0 0 var(--seg-edge); cursor: pointer; transition: filter .15s, transform .15s; min-width: 3px; }
+.seg.prog { background: repeating-linear-gradient(135deg, var(--seg) 0 4px, var(--seg-soft) 4px 8px); }
+.seg.start { border-top-left-radius: 999px; border-bottom-left-radius: 999px; }
+.seg.end { border-top-right-radius: 999px; border-bottom-right-radius: 999px; }
+.seg:hover { filter: brightness(.93) saturate(1.15); transform: scaleY(1.35); z-index: 2; }
+.seg::after { content: ""; position: absolute; inset: -6px 0; }
+.ro .seg { cursor: default; }
+
+.ruler { position: relative; height: 30px; font-size: 11px; color: var(--muted); }
+.ruler .t { position: absolute; top: 5px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; line-height: 1.25; white-space: nowrap; }
+.ruler .t::before { content: ""; position: absolute; top: -5px; width: 1px; height: 4px; background: var(--muted); opacity: .5; }
+.ruler .t.l { transform: none; align-items: flex-start; }
+.ruler .t.l::before { left: 0; }
+.ruler .t.r { transform: none; right: 0; align-items: flex-end; }
+.ruler .t.r::before { right: 0; }
+.ruler .t b { font-weight: 600; color: var(--fg); font-size: 10.5px; }
+.ruler .t .mono { font-size: 10px; }
+@media (max-width: 760px) { .ruler .t.q { display: none; } }
+
+.empty { text-align: center; padding: 40px 16px; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.empty h3 { margin: 0; color: var(--fg); font-size: 17px; }
+.empty p { margin: 0; max-width: 48ch; }
+.empty-sm { padding: 10px 2px; color: var(--muted); font-size: 13.5px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.skel { height: 12px; border-radius: 999px; background: linear-gradient(90deg, var(--track) 0%, var(--surface-2) 50%, var(--track) 100%); background-size: 200% 100%; animation: sh 1.4s linear infinite; }
+@keyframes sh { to { background-position: -200% 0; } }
+
+/* Tooltip */
+.tip { position: fixed; z-index: 50; pointer-events: none; background: var(--fg); color: var(--surface); border-radius: 12px; padding: 10px 12px; font-size: 12.5px; line-height: 1.45; max-width: 280px; box-shadow: var(--shadow); opacity: 0; transform: translateY(4px); transition: opacity .12s, transform .12s; }
+.tip.on { opacity: 1; transform: none; }
+.tip b { font-family: var(--font-mono); font-size: 12px; }
+.tip .st { display: inline-block; margin-top: 2px; padding: 0 7px; border-radius: 999px; background: var(--seg); color: var(--seg-ink); font-weight: 600; font-size: 11px; }
+.tip .mut { opacity: .75; }
+
+/* Dialogs */
+dialog { border: 0; padding: 0; border-radius: 22px; background: var(--surface); color: var(--fg); box-shadow: 0 24px 64px rgba(0,0,0,.25); width: min(560px, calc(100% - 24px)); max-height: calc(100% - 24px); }
+dialog.wide { width: min(1040px, calc(100% - 24px)); }
+dialog.mid { width: min(720px, calc(100% - 24px)); }
+dialog::backdrop { background: var(--scrim); backdrop-filter: blur(2px); }
+dialog[open] { animation: pop .18s cubic-bezier(.2,.8,.2,1); }
+@keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+dialog form { display: flex; flex-direction: column; max-height: calc(100dvh - 24px); }
+.dlg-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 20px 6px; }
+.dlg-head h2 { margin: 0; font-size: 18px; font-weight: 700; }
+.dlg-head p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+.dlg-body { padding: 10px 20px 16px; overflow: auto; display: flex; flex-direction: column; gap: 16px; }
+.dlg-foot { display: flex; align-items: center; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.dlg-foot .spacer { flex: 1; }
+.grid2 { display: grid; grid-template-columns: 1fr; gap: 12px 16px; }
+@media (min-width: 640px) { .grid2 { grid-template-columns: 1fr 1fr; } .span2 { grid-column: span 2; } }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field > span { font-size: 13px; font-weight: 600; }
+.field > span i { color: var(--danger); font-style: normal; }
+.inp, .field input, .field select { height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); padding: 0 12px; outline: none; width: 100%; min-width: 0; transition: border-color .15s, box-shadow .15s; }
+.inp:focus, .field input:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.inp[aria-invalid="true"], .field input[aria-invalid="true"] { border-color: var(--danger); }
+.hint { font-size: 12px; color: var(--muted); }
+.err { font-size: 12px; color: var(--danger); font-weight: 500; }
+.err:empty { display: none; }
+.check { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; font-weight: 600; }
+.check input { width: 18px; height: 18px; accent-color: var(--fg); flex: none; }
+
+.jpick { display: flex; flex-direction: column; gap: 10px; }
+.jpick-item { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; background: var(--surface-2); }
+.jpick-item:has(input[type=checkbox]:checked) { border-color: var(--fg); background: var(--surface); }
+.jpick-item .grid2 { margin-left: 28px; }
+
+.preview { background: var(--surface-2); border-radius: 14px; padding: 12px 14px 8px; }
+.preview .cap { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.seg-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.seg-head h3 { margin: 0; font-size: 15px; }
+.seg-head .cnt { font-size: 12.5px; color: var(--muted); flex: 1; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; }
+table.segtable { border-collapse: collapse; width: 100%; min-width: 960px; font-size: 13px; }
+.segtable th { text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; padding: 10px 8px; background: var(--surface-2); border-bottom: 1px solid var(--line); white-space: nowrap; }
+.segtable td { padding: 6px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.segtable tr:last-child td { border-bottom: 0; }
+.segtable .inp { height: 38px; border-radius: 10px; padding: 0 10px; font-size: 13px; }
+.segtable td.n { color: var(--muted); font-variant-numeric: tabular-nums; padding-top: 15px; text-align: center; width: 32px; }
+.segtable td.len { white-space: nowrap; padding-top: 15px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.segtable td.act { white-space: nowrap; }
+.segtable tr.flash td { animation: flash 1.4s ease; }
+@keyframes flash { 0%, 40% { background: color-mix(in srgb, var(--seg) 35%, transparent); } }
+.segtable .err { display: block; margin-top: 4px; }
+.seg-empty { padding: 18px; text-align: center; color: var(--muted); font-size: 13.5px; }
+.radio-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.radio-row label { flex: 1 1 150px; display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 14px; padding: 12px; cursor: pointer; background: var(--surface-2); }
+.radio-row label:has(input:checked) { border-color: var(--fg); background: var(--surface); }
+.radio-row label:has(input:disabled) { opacity: .5; cursor: not-allowed; }
+.radio-row input { accent-color: var(--fg); margin-top: 3px; }
+.radio-row small { display: block; color: var(--muted); font-size: 12px; }
+.confirm-msg { margin: 0; color: var(--muted); }
+
+.mset { border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.mset-h { display: flex; gap: 8px; align-items: center; }
+.mset-h .inp { font-weight: 700; }
+.mitems { display: flex; flex-direction: column; gap: 6px; margin-left: 14px; padding-left: 12px; border-left: 2px solid var(--line); }
+.mitem { display: flex; gap: 6px; align-items: center; }
+.mitem .inp { height: 38px; font-size: 13.5px; }
+
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 16px); background: var(--fg); color: var(--surface); padding: 10px 18px; border-radius: 999px; font-size: 13.5px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 60; max-width: calc(100% - 32px); text-align: center; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+.toast.bad { background: var(--danger); color: #fff; }
+
+/* Auth / mode */
+.auth { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mode { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px 0 6px; border-radius: 999px; background: var(--surface); box-shadow: var(--shadow-sm); font-size: 13px; font-weight: 600; max-width: 100%; min-width: 0; }
+.mode .dot { width: 24px; height: 24px; border-radius: 999px; display: grid; place-items: center; background: var(--surface-2); color: var(--muted); flex: none; }
+.mode .dot svg.i { width: 14px; height: 14px; }
+.mode.ed .dot { background: var(--seg); color: var(--seg-ink); }
+.mode .who { color: var(--muted); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+.mode img { width: 24px; height: 24px; border-radius: 999px; flex: none; }
+svg.gbtn { width: 16px; height: 16px; flex: none; }
+.mail { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+.mail code { font-family: var(--font-mono); font-size: 13.5px; font-weight: 600; user-select: all; overflow-wrap: anywhere; }
+.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 14px; }
+.steps b { color: var(--fg); }
+.ed-list { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.ed-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.ed-row:last-child { border-bottom: 0; }
+.ed-row .em { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 14px; }
+.ed-row .rl { font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.ed-row .rl.admin { background: var(--seg); color: var(--seg-ink); }
+.ed-add { display: grid; grid-template-columns: minmax(0, 1fr) 130px auto; gap: 8px; align-items: start; }
+@media (max-width: 560px) { .ed-add { grid-template-columns: minmax(0, 1fr) auto; } .ed-add select { grid-column: 1 / -1; grid-row: 2; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo brandmark"><svg class="on-light" viewBox="0 0 48 48" role="img" aria-label="Logo kontinù"><path d="M4 10 C22 10 24 19 44 19 L44 29 C24 29 22 38 4 38 Z" fill="#13304D"/><path d="M4 24 H44" stroke="#1FA7B8" stroke-width="3"/></svg><svg class="on-dark" viewBox="0 0 48 48" role="img" aria-label="Logo kontinù"><path d="M4 10 C22 10 24 19 44 19 L44 29 C24 29 22 38 4 38 Z" fill="#FFFFFF"/><path d="M4 24 H44" stroke="#1FA7B8" stroke-width="3"/></svg></div>
+      <div><strong>Stripmap Irigasi</strong><span id="judul">Progres per kode ruas</span></div>
+    </div>
+    <label class="search" for="q">
+      <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <span class="sr">Cari</span>
+      <input id="q" type="search" placeholder="Cari D.I., kode ruas, atau kabupaten" autocomplete="off">
+    </label>
+    <div class="auth" id="auth"></div>
+    <div class="actions">
+      <button class="btn" id="btnExport" type="button" hidden>
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>Export PDF
+      </button>
+      <button class="btn" id="btnSettings" type="button" data-edit>
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>Pengaturan
+      </button>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" hidden></div>
+
+  <div class="paketbar">
+    <div class="tabs" id="tabs" role="tablist" aria-label="Paket"></div>
+    <div class="paket-tools" id="paketTools"></div>
+  </div>
+
+  <section class="stats" id="stats" aria-label="Ringkasan paket"></section>
+
+  <div class="layout">
+    <details class="nav" id="nav" open>
+      <summary><span>Kabupaten &amp; D.I.</span><span class="cur" id="navCur"></span></summary>
+      <div id="navBody"></div>
+    </details>
+    <main class="board" id="main">
+      <div class="ruas-list">
+        <div class="ruas"><div class="skel" style="width:30%;height:16px"></div><div class="jblock"><div class="skel" style="width:40%"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Jenis pekerjaan stripmap editor -->
+<dialog id="dlgJenis" class="wide" aria-labelledby="dJTitle">
+  <form id="formJenis" novalidate>
+    <div class="dlg-head">
+      <div><h2 id="dJTitle">Stripmap</h2><p id="dJSub"></p></div>
+      <button type="button" class="icon-btn" data-close aria-label="Tutup"><svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="dlg-body">
+      <div class="grid2">
+        <label class="field"><span>STA awal (0%)</span><input id="jAwal" class="mono" inputmode="decimal" autocomplete="off" placeholder="0+000"><small class="hint">Tulis 1+250 atau dalam meter: 1250</small></label>
+        <label class="field"><span>STA akhir (100%)</span><input id="jAkhir" class="mono" inputmode="decimal" autocomplete="off" placeholder="1+000"><small class="err" id="jRangeErr"></small></label>
+      </div>
+      <div class="preview" aria-label="Pratinjau stripmap">
+        <div class="cap"><span>Pratinjau</span><span id="jPvStat"></span></div>
+        <div id="jPv"></div>
+      </div>
+      <div class="seg-head">
+        <h3>Segmen STA</h3><span class="cnt" id="jSegCount"></span>
+        <button type="button" class="btn btn-sm" id="btnAddRow"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>Tambah segmen</button>
+      </div>
+      <div class="table-wrap">
+        <table class="segtable">
+          <thead><tr><th>#</th><th>Item pekerjaan</th><th>Dari STA</th><th>Sampai STA</th><th>Panjang</th><th>Status</th><th>Tanggal</th><th>Jumlah Pekerja</th><th><span class="sr">Aksi</span></th></tr></thead>
+          <tbody id="jBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <span class="spacer"></span>
+      <button type="button" class="btn" data-close>Batal</button>
+      <button type="submit" class="btn btn-primary" id="btnSaveJ">Simpan</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Ruas editor -->
+<dialog id="dlgRuas" class="mid" aria-labelledby="dRTitle">
+  <form id="formRuas" novalidate>
+    <div class="dlg-head"><h2 id="dRTitle">Tambah kode ruas</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Tutup"><svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="dlg-body">
+      <div class="grid2">
+        <label class="field"><span>Kode ruas / trase <i>*</i></span><input id="rKode" autocomplete="off" placeholder="mis. BKr.1 – BKr.2"><small class="err" id="rKodeErr"></small></label>
+        <label class="field"><span>D.I.</span><select id="rDi"></select></label>
+        <label class="field span2"><span>Keterangan (opsional)</span><input id="rKet" autocomplete="off" placeholder="mis. Mandor: Rizqan"></label>
+      </div>
+      <div class="field"><span>Jenis pekerjaan di ruas ini</span>
+        <small class="hint">Centang jenis pekerjaan yang ada. Setiap jenis punya rentang STA sendiri sebagai 0% dan 100%.</small>
+        <div class="jpick" id="rJenis"></div>
+      </div>
+      <label class="check" id="rContohWrap" hidden><input type="checkbox" id="rContoh"> Tandai sebagai data contoh</label>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn btn-danger-ghost" id="btnDelRuas">Hapus kode ruas</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" data-close>Batal</button>
+      <button type="submit" class="btn btn-primary" id="btnSaveRuas">Simpan</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Name + parent -->
+<dialog id="dlgName" aria-labelledby="nTitle">
+  <form id="formName" novalidate>
+    <div class="dlg-head"><h2 id="nTitle">Tambah</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Tutup"><svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="dlg-body">
+      <label class="field"><span id="nLabel">Nama</span><input id="nInput" autocomplete="off"><small class="err" id="nErr"></small></label>
+      <label class="field" id="nParentWrap"><span id="nParentLabel">Induk</span><select id="nParent"></select></label>
+    </div>
+    <div class="dlg-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Batal</button><button type="submit" class="btn btn-primary" id="nSave">Simpan</button></div>
+  </form>
+</dialog>
+
+<!-- Settings -->
+<dialog id="dlgSet" class="mid" aria-labelledby="sTitle">
+  <form id="formSet" novalidate>
+    <div class="dlg-head"><div><h2 id="sTitle">Pengaturan</h2><p>Nama proyek serta daftar jenis dan item pekerjaan</p></div>
+      <button type="button" class="icon-btn" data-close aria-label="Tutup"><svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="dlg-body">
+      <label class="field"><span>Nama proyek</span><input id="sJudul" autocomplete="off" placeholder="mis. Rehabilitasi Jaringan Irigasi"></label>
+      <div class="field"><span>Jenis &amp; item pekerjaan</span><small class="hint">Kumulatif tiap jenis = rata-rata persen semua item di bawahnya.</small></div>
+      <div id="sMaster" style="display:flex;flex-direction:column;gap:12px"></div>
+      <div><button type="button" class="btn btn-sm" id="sAddJ"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>Tambah jenis pekerjaan</button></div>
+      <small class="err" id="sErr"></small>
+    </div>
+    <div class="dlg-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Batal</button><button type="submit" class="btn btn-primary" id="sSave">Simpan</button></div>
+  </form>
+</dialog>
+
+<!-- Confirm -->
+<dialog id="dlgConfirm" aria-labelledby="cTitle">
+  <form id="formConfirm">
+    <div class="dlg-head"><h2 id="cTitle">Hapus?</h2></div>
+    <div class="dlg-body"><p class="confirm-msg" id="cMsg"></p></div>
+    <div class="dlg-foot"><span class="spacer"></span><button type="button" class="btn" id="cNo">Batal</button><button type="submit" class="btn btn-danger" id="cYes">Hapus</button></div>
+  </form>
+</dialog>
+
+<!-- Export -->
+<dialog id="dlgExport" aria-labelledby="eTitle">
+  <form id="formExport">
+    <div class="dlg-head"><h2 id="eTitle">Export PDF</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Tutup"><svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="dlg-body">
+      <div class="field"><span>Isi</span>
+        <div class="radio-row">
+          <label><input type="radio" name="scope" value="di" checked><div><strong>D.I. ini</strong><small id="exDi"></small></div></label>
+          <label><input type="radio" name="scope" value="kab"><div><strong>Kabupaten ini</strong><small id="exKab"></small></div></label>
+          <label><input type="radio" name="scope" value="paket"><div><strong>Seluruh paket</strong><small id="exPaket"></small></div></label>
+        </div>
+      </div>
+      <div class="field"><span>Ukuran kertas (landscape)</span>
+        <div class="radio-row">
+          <label><input type="radio" name="paper" value="a4" checked><div><strong>A4</strong><small>Untuk lampiran laporan</small></div></label>
+          <label><input type="radio" name="paper" value="a3"><div><strong>A3</strong><small>Bar lebih panjang, STA lebih jelas</small></div></label>
+        </div>
+      </div>
+      <small class="err" id="eExport"></small>
+    </div>
+    <div class="dlg-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Batal</button><button type="submit" class="btn btn-primary" id="btnDoExport">Unduh PDF</button></div>
+  </form>
+</dialog>
+
+<!-- Request editor access -->
+<dialog id="dlgReq" aria-labelledby="rqTitle">
+  <form id="formReq">
+    <div class="dlg-head"><div><h2 id="rqTitle">Minta akses editor</h2><p>Semua orang bisa melihat stripmap. Untuk mengubah data, Anda perlu didaftarkan sebagai editor.</p></div>
+      <button type="button" class="icon-btn" data-close aria-label="Tutup"><svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="dlg-body">
+      <ol class="steps">
+        <li>Kirim email ke admin berisi <b>alamat Gmail</b> yang akan Anda pakai untuk masuk, nama, dan perusahaan/jabatan.</li>
+        <li>Admin menambahkan alamat Gmail Anda ke daftar editor.</li>
+        <li>Klik <b>Masuk dengan Google</b> memakai alamat tersebut. Tombol edit akan muncul.</li>
+      </ol>
+      <div class="field"><span>Email admin</span>
+        <div class="mail"><code id="rqMail"></code><button type="button" class="btn btn-xs" id="rqCopy">Salin alamat</button></div>
+      </div>
+      <small class="hint" id="rqHint"></small>
+    </div>
+    <div class="dlg-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Tutup</button><a class="btn btn-primary" id="rqSend" href="#">Tulis email</a></div>
+  </form>
+</dialog>
+
+<!-- Manage editors (admin) -->
+<dialog id="dlgEd" class="mid" aria-labelledby="edTitle">
+  <form id="formEd" novalidate>
+    <div class="dlg-head"><div><h2 id="edTitle">Kelola editor</h2><p>Hanya alamat di daftar ini yang bisa mengubah data setelah masuk dengan Google.</p></div>
+      <button type="button" class="icon-btn" data-close aria-label="Tutup"><svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="dlg-body">
+      <div class="field"><span>Tambah editor</span>
+        <div class="ed-add">
+          <input id="edEmail" class="inp" type="email" autocomplete="off" placeholder="nama@gmail.com" aria-label="Email editor baru">
+          <select id="edRole" class="inp" aria-label="Peran"><option value="editor">Editor</option><option value="admin">Admin</option></select>
+          <button type="submit" class="btn btn-primary btn-sm" id="edAdd" style="height:44px">Tambah</button>
+        </div>
+        <small class="hint">Admin juga bisa menambah dan menghapus editor.</small>
+        <small class="err" id="edErr"></small>
+      </div>
+      <div class="ed-list" id="edList"></div>
+    </div>
+    <div class="dlg-foot"><span class="spacer"></span><button type="button" class="btn" data-close>Selesai</button></div>
+  </form>
+</dialog>
+
+<div class="tip" id="tip" role="tooltip"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="application/json" id="demo-data">
+{"paket":[{"id":"p-1","nama":"Paket 1","order":1},{"id":"p-2","nama":"Paket 2","order":2}],
+"kabupaten":[{"id":"k-parimo","paketId":"p-1","nama":"Kab. Parigi Moutong","order":1},{"id":"k-sigi","paketId":"p-1","nama":"Kab. Sigi","order":2},{"id":"k-pasangkayu","paketId":"p-2","nama":"Kab. Pasangkayu","order":1},{"id":"k-palu","paketId":"p-2","nama":"Kota Palu","order":2}],
+"di":[{"id":"di-c1","kabId":"k-parimo","nama":"D.I. Contoh 1","order":1},{"id":"di-c2","kabId":"k-parimo","nama":"D.I. Contoh 2","order":2},{"id":"di-c3","kabId":"k-sigi","nama":"D.I. Contoh 3","order":1},{"id":"di-c4","kabId":"k-pasangkayu","nama":"D.I. Contoh 4","order":1},{"id":"di-c5","kabId":"k-palu","nama":"D.I. Contoh 5","order":1}],
+"ruas":[
+{"id":"r-c1a","diId":"di-c1","kode":"RC-01","ket":"Contoh ruas dengan tiga jenis pekerjaan","order":1,"contoh":true,"jenis":{
+ "gst":{"staAwal":0,"staAkhir":1200,"items":{"gst-1":[{"id":"x1","dari":0,"sampai":450,"status":"selesai","tanggal":"2026-08-12","catatan":""},{"id":"x2","dari":450,"sampai":600,"status":"proses","tanggal":"2026-09-20","catatan":""}]}},
+ "pb":{"staAwal":300,"staAkhir":900,"items":{
+  "pb-bkr":[{"id":"y1","dari":300,"sampai":900,"status":"selesai","tanggal":"2026-08-05","catatan":""}],
+  "pb-gtm":[{"id":"y2","dari":300,"sampai":800,"status":"selesai","tanggal":"2026-08-18","catatan":""}],
+  "pb-lt":[{"id":"y3","dari":300,"sampai":650,"status":"selesai","tanggal":"2026-09-01","catatan":""},{"id":"y4","dari":650,"sampai":750,"status":"proses","tanggal":"2026-09-22","catatan":""}],
+  "pb-dka":[{"id":"y5","dari":300,"sampai":600,"status":"selesai","tanggal":"2026-09-10","catatan":""}],
+  "pb-dki":[{"id":"y6","dari":300,"sampai":550,"status":"selesai","tanggal":"2026-09-12","catatan":""}],
+  "pb-pka":[{"id":"y7","dari":300,"sampai":450,"status":"selesai","tanggal":"2026-09-25","catatan":""}],
+  "pb-pki":[{"id":"y8","dari":300,"sampai":400,"status":"proses","tanggal":"2026-09-30","catatan":""}]}},
+ "gts":{"staAwal":0,"staAkhir":1200,"items":{"gts-1":[{"id":"z1","dari":0,"sampai":300,"status":"selesai","tanggal":"2026-07-28","catatan":""},{"id":"z2","dari":700,"sampai":1000,"status":"selesai","tanggal":"2026-08-08","catatan":"Dikerjakan lebih dulu karena akses alat berat"}]}}}},
+{"id":"r-c1b","diId":"di-c1","kode":"RC-02","ket":"","order":2,"contoh":true,"jenis":{
+ "pb":{"staAwal":0,"staAkhir":500,"items":{"pb-bkr":[{"id":"w1","dari":0,"sampai":500,"status":"selesai","tanggal":"2026-09-02","catatan":""}],"pb-gtm":[{"id":"w2","dari":0,"sampai":400,"status":"selesai","tanggal":"2026-09-14","catatan":""}],"pb-lt":[{"id":"w3","dari":0,"sampai":200,"status":"selesai","tanggal":"2026-09-28","catatan":""}],"pb-dka":[{"id":"w4","dari":0,"sampai":150,"status":"proses","tanggal":"2026-10-03","catatan":""}]}}}},
+{"id":"r-c2a","diId":"di-c2","kode":"RC-03","ket":"","order":1,"contoh":true,"jenis":{
+ "gts":{"staAwal":0,"staAkhir":2000,"items":{"gts-1":[{"id":"v1","dari":0,"sampai":800,"status":"selesai","tanggal":"2026-09-05","catatan":""},{"id":"v2","dari":800,"sampai":1100,"status":"proses","tanggal":"2026-09-29","catatan":""}]}}}},
+{"id":"r-c3a","diId":"di-c3","kode":"RC-04","ket":"","order":1,"contoh":true,"jenis":{
+ "gst":{"staAwal":0,"staAkhir":1500,"items":{"gst-1":[{"id":"u1","dari":0,"sampai":600,"status":"selesai","tanggal":"2026-09-11","catatan":""}]}},
+ "pb":{"staAwal":0,"staAkhir":400,"items":{"pb-bkr":[{"id":"u2","dari":0,"sampai":250,"status":"selesai","tanggal":"2026-09-20","catatan":""}]}}}},
+{"id":"r-c4a","diId":"di-c4","kode":"RC-05","ket":"","order":1,"contoh":true,"jenis":{
+ "pb":{"staAwal":0,"staAkhir":800,"items":{"pb-bkr":[{"id":"t1","dari":0,"sampai":800,"status":"selesai","tanggal":"2026-08-20","catatan":""}],"pb-gtm":[{"id":"t2","dari":0,"sampai":800,"status":"selesai","tanggal":"2026-08-29","catatan":""}],"pb-lt":[{"id":"t3","dari":0,"sampai":600,"status":"selesai","tanggal":"2026-09-15","catatan":""}],"pb-dka":[{"id":"t4","dari":0,"sampai":500,"status":"selesai","tanggal":"2026-09-21","catatan":""}],"pb-dki":[{"id":"t5","dari":0,"sampai":500,"status":"selesai","tanggal":"2026-09-21","catatan":""}],"pb-pka":[{"id":"t6","dari":0,"sampai":300,"status":"proses","tanggal":"2026-10-01","catatan":""}]}}}},
+{"id":"r-c5a","diId":"di-c5","kode":"RC-06","ket":"","order":1,"contoh":true,"jenis":{
+ "gts":{"staAwal":0,"staAkhir":900,"items":{"gts-1":[{"id":"s1","dari":0,"sampai":150,"status":"selesai","tanggal":"2026-09-18","catatan":""}]}}}}
+]}
+</script>
+
+<script>
+/* =====================================================================
+   PENGATURAN — isi dua nilai ini dari Supabase:
+   Project Settings › API › Project URL dan anon/publishable key.
+   Anon key aman diletakkan di sini karena akses diatur oleh RLS di database.
+   ===================================================================== */
+const CONFIG = {
+  SUPABASE_URL: "https://szdnaypbaykasddpdggu.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6ZG5heXBiYXlrYXNkZHBkZ2d1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE1NDM3NTIsImV4cCI6MjEwNzExOTc1Mn0._mnjrLgX01tZy2qPfxlWXrmGHvaSn8h3GMeOtyWRno4",
+  ADMIN_EMAIL: "paluinpresiii@gmail.com",
+};
+</script>
+<script>
+(() => {
+  "use strict";
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const rid = () => Math.random().toString(36).slice(2, 10);
+  const nf = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 });
+  const nf2 = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 2 });
+  const mean = (a) => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0);
+  const ICON = {
+    plus: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>',
+    pencil: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>',
+    trash: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>',
+    copy: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
+    bars: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h12M3 18h7"/></svg>',
+    x: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  };
+
+  const DEFAULT_MASTER = [
+    { id: "gst", nama: "Pekerjaan Galian Saluran Tanah", items: [{ id: "gst-1", nama: "Galian Saluran Tanah" }] },
+    { id: "pb", nama: "Pekerjaan Pasangan Batu", items: [
+      { id: "pb-bkr", nama: "Bongkaran" },
+      { id: "pb-gtm", nama: "Galian Tanah Mekanis" },
+      { id: "pb-lt", nama: "Pasangan Batu (Lantai)" },
+      { id: "pb-dka", nama: "Pasangan Batu (Dinding Kanan)" },
+      { id: "pb-dki", nama: "Pasangan Batu (Dinding Kiri)" },
+      { id: "pb-pka", nama: "Plesteran (Dinding Kanan)" },
+      { id: "pb-pki", nama: "Plesteran (Dinding Kiri)" },
+      { id: "pb-aka", nama: "Acian (Dinding Kanan)" },
+      { id: "pb-aki", nama: "Acian (Dinding Kiri)" },
+    ] },
+    { id: "gts", nama: "Pekerjaan Galian Tanah Sedimentasi", items: [{ id: "gts-1", nama: "Galian Tanah Sedimentasi" }] },
+  ];
+
+  /* ---------- STA ---------- */
+  function fmtSTA(m) {
+    m = Math.max(0, Number(m) || 0);
+    m = Math.round(m * 10) / 10;
+    const km = Math.floor(m / 1000);
+    const r = Math.round((m - km * 1000) * 10) / 10;
+    const rs = Number.isInteger(r) ? String(r).padStart(3, "0") : r.toFixed(1).padStart(5, "0").replace(".", ",");
+    return km + "+" + rs;
+  }
+  function parseSTA(s) {
+    s = String(s ?? "").trim().replace(/\s+/g, "").replace(",", ".");
+    if (!s) return NaN;
+    const m = s.match(/^(\d+)\+(\d+(?:\.\d+)?)$/);
+    if (m) return Number(m[1]) * 1000 + Number(m[2]);
+    if (/^\d+(\.\d+)?$/.test(s)) return Number(s);
+    return NaN;
+  }
+  const fmtLen = (m) => (m >= 1000 ? nf2.format(m / 1000) + " km" : nf.format(m) + " m");
+  const fmtPct = (p) => nf.format(p) + "%";
+
+  /* ---------- Calc ---------- */
+  function merged(segs, a, b, st) {
+    const iv = (segs || []).filter((x) => x.status === st)
+      .map((x) => [Math.max(+x.dari, a), Math.min(+x.sampai, b)])
+      .filter(([p, q]) => isFinite(p) && isFinite(q) && q > p).sort((p, q) => p[0] - q[0]);
+    let tot = 0, cur = null;
+    for (const [p, q] of iv) {
+      if (!cur || p > cur[1]) { if (cur) tot += cur[1] - cur[0]; cur = [p, q]; } else cur[1] = Math.max(cur[1], q);
+    }
+    if (cur) tot += cur[1] - cur[0];
+    return tot;
+  }
+  function blockCalc(block, jd) {
+    const a = +block.staAwal || 0, b = +block.staAkhir || 0, L = Math.max(0, b - a);
+    const items = jd.items.map((it) => {
+      const segs = (block.items && block.items[it.id]) || [];
+      const done = merged(segs, a, b, "selesai"), prog = merged(segs, a, b, "proses");
+      return { it, segs, done, prog, pct: L ? (done / L) * 100 : 0, pctProg: L ? (prog / L) * 100 : 0 };
+    });
+    return { a, b, L, items, kum: mean(items.map((x) => x.pct)) };
+  }
+  const jenisOf = (r) => S.master.filter((j) => r.jenis && r.jenis[j.id]);
+  function rollup(list) {
+    return S.master.map((j) => {
+      const ks = list.filter((r) => r.jenis && r.jenis[j.id]).map((r) => blockCalc(r.jenis[j.id], j).kum);
+      return { j, n: ks.length, avg: mean(ks) };
+    });
+  }
+  function overall(list) {
+    const ks = [];
+    list.forEach((r) => jenisOf(r).forEach((j) => ks.push(blockCalc(r.jenis[j.id], j).kum)));
+    return ks.length ? mean(ks) : null;
+  }
+
+  /* ---------- State ---------- */
+  const S = { paket: [], kab: [], di: [], ruas: [], master: DEFAULT_MASTER, judul: "", selPaket: null, selDi: null, q: "", mode: "loading", canWrite: true, loaded: new Set() };
+  let sb = null;
+  S.user = null; S.role = null; S.canWrite = false;
+  try { S.selPaket = localStorage.getItem("sm2-paket"); S.selDi = localStorage.getItem("sm2-di"); } catch {}
+  const remember = () => { try { localStorage.setItem("sm2-paket", S.selPaket || ""); localStorage.setItem("sm2-di", S.selDi || ""); } catch {} };
+
+  const byId = (arr, id) => arr.find((x) => x.id === id);
+  const coll = new Intl.Collator("id", { numeric: true });
+  const sortBy = (arr, key = "nama") => arr.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || coll.compare(String(a[key] ?? ""), String(b[key] ?? "")));
+  const kabsOf = (pid) => sortBy(S.kab.filter((k) => k.paketId === pid));
+  const disOf = (kid) => sortBy(S.di.filter((d) => d.kabId === kid));
+  const ruasOf = (did) => sortBy(S.ruas.filter((r) => r.diId === did), "kode");
+  const ruasOfKab = (kid) => disOf(kid).flatMap((d) => ruasOf(d.id));
+  const ruasOfPaket = (pid) => kabsOf(pid).flatMap((k) => ruasOfKab(k.id));
+  const hay = (...xs) => xs.join(" ").toLowerCase();
+  function diNameMatch(d) { const k = byId(S.kab, d.kabId); return !S.q || hay(d.nama, k?.nama).includes(S.q); }
+  function ruasMatch(r) { return !S.q || hay(r.kode, r.ket).includes(S.q); }
+  function diVisible(d) { return !S.q || diNameMatch(d) || ruasOf(d.id).some(ruasMatch); }
+
+  function resolveSel() {
+    const pk = sortBy(S.paket);
+    if (!byId(S.paket, S.selPaket)) S.selPaket = pk[0]?.id || null;
+    const dis = kabsOf(S.selPaket).flatMap((k) => disOf(k.id)).filter(diVisible);
+    if (!dis.some((d) => d.id === S.selDi)) S.selDi = dis[0]?.id || null;
+  }
+
+  /* ---------- UI helpers ---------- */
+  let toastT;
+  function toast(msg, bad) {
+    const t = $("#toast"); t.textContent = msg; t.classList.toggle("bad", !!bad); t.classList.add("on");
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), bad ? 5000 : 3000);
+  }
+
+  function segsHTML(segs, a, L, attrs, interactive) {
+    if (!(L > 0)) return "";
+    let out = "";
+    segs.forEach((g, i) => {
+      const p = Math.max(+g.dari, a), q = Math.min(+g.sampai, a + L);
+      if (!(isFinite(p) && isFinite(q) && q > p)) return;
+      const left = ((p - a) / L) * 100, w = ((q - p) / L) * 100;
+      const cls = ["seg", g.status === "proses" ? "prog" : "", left <= 0.01 ? "start" : "", left + w >= 99.99 ? "end" : ""].join(" ");
+      const lab = `STA ${fmtSTA(g.dari)} sampai ${fmtSTA(g.sampai)}, ${g.status === "proses" ? "dalam proses" : "selesai"}`;
+      const at = `class="${cls}" style="left:${left}%;width:${w}%" ${attrs} data-seg="${i}" aria-label="${esc(lab)}"`;
+      out += interactive ? `<button type="button" ${at}></button>` : `<span ${at} tabindex="0" role="img"></span>`;
+    });
+    return out;
+  }
+  function rulerHTML(a, L) {
+    return [0, 25, 50, 75, 100].map((p) => {
+      const pos = p === 0 ? "l" : p === 100 ? "r" : "q";
+      const style = p === 0 ? "left:0" : p === 100 ? "" : `left:${p}%`;
+      return `<span class="t ${pos}" style="${style}"><b>${p}%</b><span class="mono">${fmtSTA(a + (L * p) / 100)}</span></span>`;
+    }).join("");
+  }
+  // Jumlah pekerja on the most recent date that has a segment in this jenis block
+  function latestCrew(c) {
+    const all = c.items.flatMap((x) => x.segs.map((g) => ({ g, it: x.it }))).filter((o) => o.g.tanggal);
+    if (!all.length) return null;
+    const tgl = all.reduce((m, o) => (o.g.tanggal > m ? o.g.tanggal : m), "");
+    const day = all.filter((o) => o.g.tanggal === tgl);
+    const filled = day.filter((o) => o.g.pekerja != null && o.g.pekerja !== "" && isFinite(+o.g.pekerja));
+    const per = {};
+    filled.forEach((o) => { per[o.it.nama] = (per[o.it.nama] || 0) + +o.g.pekerja; });
+    return { tgl, total: filled.reduce((s, o) => s + +o.g.pekerja, 0), any: filled.length > 0, per };
+  }
+  function crewHTML(c) {
+    const w = latestCrew(c); if (!w) return "";
+    const dt = new Date(w.tgl + "T00:00").toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    const br = Object.entries(w.per);
+    return `<div class="crew"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span class="lbl">Jumlah pekerja</span>${w.any ? `<b>${nf.format(w.total)} orang</b>` : `<span class="dt">belum diisi</span>`}<span class="dt">${esc(dt)}</span>
+      ${br.length > 1 ? `<span class="br">${br.map(([n, v]) => `${esc(n)} ${nf.format(v)}`).join(" · ")}</span>` : ""}</div>`;
+  }
+  // Item rows + ruler + kumulatif for one jenis block
+  function itemsHTML(r, j, c, interactive) {
+    let h = "";
+    c.items.forEach((x) => {
+      const attrs = `data-ruas="${esc(r.id)}" data-jenis="${esc(j.id)}" data-item="${esc(x.it.id)}"`;
+      h += `<div class="irow"><div class="lab">${esc(x.it.nama)}</div>
+        <div class="bar"><div class="track" role="img" aria-label="${esc(x.it.nama)}: ${fmtPct(x.pct)} selesai">${segsHTML(x.segs, c.a, c.L, attrs, interactive)}</div></div>
+        <div class="pc">${fmtPct(x.pct)}${x.prog ? `<small>+${fmtPct(x.pctProg)} proses</small>` : ""}</div></div>`;
+    });
+    h += `<div class="irow rl"><div class="lab"></div><div class="bar"><div class="ruler" aria-hidden="true">${rulerHTML(c.a, c.L)}</div></div><div class="pc"></div></div>`;
+    if (c.items.length > 1) {
+      h += `<div class="irow kum"><div class="lab">Kumulatif</div>
+        <div class="bar"><div class="track k" role="img" aria-label="Kumulatif ${fmtPct(c.kum)}"><div class="fill" style="width:${Math.min(100, c.kum)}%"></div></div></div>
+        <div class="pc">${fmtPct(c.kum)}</div></div>`;
+    }
+    return h;
+  }
+
+  /* ---------- Render ---------- */
+  let raf = 0;
+  const render = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(doRender); };
+  const ready = () => S.mode === "demo" || (S.mode === "db" && ["paket", "kabupaten", "di", "ruas", "meta"].every((k) => S.loaded.has(k)));
+  const isConfigured = () => /^https:\/\/.+\.supabase\.co$/.test(CONFIG.SUPABASE_URL) && CONFIG.SUPABASE_ANON_KEY && !/^ISI-/.test(CONFIG.SUPABASE_ANON_KEY);
+
+  function doRender() {
+    document.body.classList.toggle("ro", !S.canWrite);
+    $("#judul").textContent = S.judul || "Progres per kode ruas";
+    const ban = $("#banner");
+    if (S.mode === "demo") { ban.hidden = false; ban.textContent = "Mode pratinjau: Supabase belum dikonfigurasi, jadi yang tampil adalah data contoh dan perubahan tidak tersimpan. Isi CONFIG di bagian atas index.html."; }
+    else if (S.mode === "error") { ban.hidden = false; ban.textContent = "Data tidak bisa dimuat dari server. Periksa koneksi internet lalu muat ulang halaman."; }
+    else ban.hidden = true;
+    $("#btnExport").hidden = !ready();
+    if (!ready()) return;
+    resolveSel(); remember();
+
+    const pakets = sortBy(S.paket);
+    $("#tabs").innerHTML = pakets.map((p) => `<button type="button" class="tab" role="tab" data-paket="${esc(p.id)}" aria-selected="${p.id === S.selPaket}">${esc(p.nama)}</button>`).join("")
+      + (S.canWrite ? `<button type="button" class="tab add" data-act="add-paket" data-edit>${ICON.plus}Paket</button>` : "");
+    const P = byId(S.paket, S.selPaket);
+    $("#paketTools").innerHTML = P ? `<button type="button" class="icon-btn" data-act="edit-paket" aria-label="Ubah nama ${esc(P.nama)}" data-edit>${ICON.pencil}</button><button type="button" class="icon-btn danger" data-act="del-paket" aria-label="Hapus ${esc(P.nama)}" data-edit>${ICON.trash}</button>` : "";
+
+    if (!P) {
+      $("#stats").innerHTML = "";
+      $("#nav").hidden = true;
+      $("#main").innerHTML = `<div class="empty"><h3>Belum ada paket</h3><p>Mulai dengan menambahkan paket pekerjaan, lalu kabupaten, D.I., dan kode ruas di dalamnya.</p>${S.canWrite ? `<button type="button" class="btn btn-primary" data-act="add-paket">${ICON.plus}Tambah paket</button>` : ""}</div>`;
+      return;
+    }
+    $("#nav").hidden = false;
+
+    // Stats
+    const kabs = kabsOf(P.id), allRuas = ruasOfPaket(P.id), nDi = kabs.reduce((n, k) => n + disOf(k.id).length, 0);
+    const ro = rollup(allRuas);
+    $("#stats").innerHTML = `<div class="stat hl"><span class="k">${esc(P.nama)}</span><span class="v">${allRuas.length}<small>kode ruas</small></span><span class="s">${nDi} D.I. di ${kabs.length} kabupaten/kota</span></div>`
+      + ro.map((x) => `<div class="stat"><span class="k">${esc(x.j.nama)}</span><span class="v">${x.n ? nf.format(x.avg) : "–"}<small>${x.n ? "%" : ""}</small></span><span class="s">${x.n ? `Rata-rata kumulatif ${x.n} ruas` : "Belum ada ruas"}</span><div class="mini"><i style="width:${x.n ? Math.min(100, x.avg) : 0}%"></i></div></div>`).join("");
+
+    // Navigator
+    let nav = `<div class="nav-head"><h2>Kabupaten &amp; D.I.</h2><button type="button" class="btn btn-xs" data-act="add-kab" data-edit>${ICON.plus}Kabupaten</button></div>`;
+    if (!kabs.length) nav += `<div class="ndi-empty">Belum ada kabupaten di paket ini.</div>`;
+    for (const k of kabs) {
+      const dis = disOf(k.id).filter(diVisible);
+      if (S.q && !dis.length && !hay(k.nama).includes(S.q)) continue;
+      nav += `<div class="nkab"><div class="nkab-h"><div class="nm"><h3>${esc(k.nama)}</h3></div>
+        <button type="button" class="icon-btn sm" data-act="add-di" data-id="${esc(k.id)}" aria-label="Tambah D.I. di ${esc(k.nama)}" data-edit>${ICON.plus}</button>
+        <button type="button" class="icon-btn sm" data-act="edit-kab" data-id="${esc(k.id)}" aria-label="Ubah ${esc(k.nama)}" data-edit>${ICON.pencil}</button>
+        <button type="button" class="icon-btn sm danger" data-act="del-kab" data-id="${esc(k.id)}" aria-label="Hapus ${esc(k.nama)}" data-edit>${ICON.trash}</button></div><div class="ndi">`;
+      if (!dis.length) nav += `<div class="ndi-empty">Belum ada D.I.</div>`;
+      for (const d of dis) {
+        const rs = ruasOf(d.id), ov = overall(rs);
+        nav += `<button type="button" class="ndi-btn" data-di="${esc(d.id)}" aria-current="${d.id === S.selDi}"><span class="n">${esc(d.nama)}</span><span class="p">${ov == null ? "–" : fmtPct(ov)}</span><span class="c">${rs.length} kode ruas</span></button>`;
+      }
+      nav += `</div></div>`;
+    }
+    $("#navBody").innerHTML = nav;
+    const D = byId(S.di, S.selDi), K = D && byId(S.kab, D.kabId);
+    $("#navCur").textContent = D ? `${K?.nama ?? ""} › ${D.nama}` : "";
+
+    // Main
+    const main = $("#main");
+    if (!D) {
+      main.innerHTML = `<div class="empty"><h3>${S.q ? "Tidak ada yang cocok" : kabs.length ? "Belum ada D.I." : "Belum ada kabupaten"}</h3><p>${S.q ? `Tidak ada D.I. atau kode ruas yang cocok dengan “${esc(S.q)}” di ${esc(P.nama)}.` : kabs.length ? "Tambahkan D.I. ke salah satu kabupaten di panel kiri." : `Tambahkan kabupaten ke ${esc(P.nama)} terlebih dahulu.`}</p>
+        ${!S.q && S.canWrite ? (kabs.length ? `<button type="button" class="btn btn-primary" data-act="add-di" data-id="${esc(kabs[0].id)}">${ICON.plus}Tambah D.I.</button>` : `<button type="button" class="btn btn-primary" data-act="add-kab">${ICON.plus}Tambah kabupaten</button>`) : ""}</div>`;
+      return;
+    }
+    const allR = ruasOf(D.id);
+    const list = S.q && !diNameMatch(D) ? allR.filter(ruasMatch) : allR;
+    const dro = rollup(allR).filter((x) => x.n);
+    let h = `<div class="board-head">
+      <div style="min-width:0"><div class="crumb">${esc(P.nama)} › ${esc(K?.nama ?? "")}</div><h1 class="title">${esc(D.nama)}</h1></div>
+      <div class="head-tools">
+        <button type="button" class="btn btn-primary btn-sm" data-act="add-ruas" data-edit>${ICON.plus}Kode ruas</button>
+        <button type="button" class="icon-btn" data-act="edit-di" aria-label="Ubah ${esc(D.nama)}" data-edit>${ICON.pencil}</button>
+        <button type="button" class="icon-btn danger" data-act="del-di" aria-label="Hapus ${esc(D.nama)}" data-edit>${ICON.trash}</button>
+      </div></div>
+      <div class="board-head" style="align-items:center">
+        <div class="rollup">${dro.length ? dro.map((x) => `<span class="pill">${esc(x.j.nama.replace(/^Pekerjaan\s+/i, ""))} <b>${fmtPct(x.avg)}</b></span>`).join("") : `<span class="pill">${allR.length} kode ruas</span>`}</div>
+        <div class="legend" aria-label="Keterangan"><span><i class="sw done"></i>Selesai</span><span><i class="sw prog"></i>Dalam proses</span><span><i class="sw none"></i>Belum</span><span><i class="sw kum"></i>Kumulatif</span></div>
+      </div>`;
+    if (!allR.length) h += `<div class="empty"><h3>Belum ada kode ruas</h3><p>Tambahkan kode ruas/trase di D.I. ini, lalu pilih jenis pekerjaannya.</p>${S.canWrite ? `<button type="button" class="btn btn-primary" data-act="add-ruas">${ICON.plus}Tambah kode ruas</button>` : ""}</div>`;
+    else if (!list.length) h += `<div class="empty"><h3>Tidak ada yang cocok</h3><p>Tidak ada kode ruas yang cocok dengan “${esc(S.q)}”.</p></div>`;
+    h += `<div class="ruas-list">`;
+    for (const r of list) {
+      const js = jenisOf(r);
+      h += `<article class="ruas" aria-labelledby="rh-${esc(r.id)}">
+        <div class="ruas-head">
+          <div class="ruas-id"><div><div class="lbl">Kode ruas</div><h2 id="rh-${esc(r.id)}">${esc(r.kode)}${r.contoh ? '<span class="tag">Contoh</span>' : ""}</h2>${r.ket ? `<p>${esc(r.ket)}</p>` : ""}</div></div>
+          <div class="ruas-tools">
+            <button type="button" class="btn btn-xs" data-act="edit-ruas" data-id="${esc(r.id)}" data-edit>${ICON.pencil}Ruas &amp; jenis pekerjaan</button>
+            <button type="button" class="icon-btn danger" data-act="del-ruas" data-id="${esc(r.id)}" aria-label="Hapus ruas ${esc(r.kode)}" data-edit>${ICON.trash}</button>
+          </div>
+        </div>`;
+      if (!js.length) h += `<div class="empty-sm">Belum ada jenis pekerjaan di ruas ini.${S.canWrite ? ` <button type="button" class="btn btn-xs" data-act="edit-ruas" data-id="${esc(r.id)}">${ICON.plus}Pilih jenis pekerjaan</button>` : ""}</div>`;
+      for (const j of js) {
+        const c = blockCalc(r.jenis[j.id], j);
+        const empty = !c.items.some((x) => x.segs.length);
+        h += `<section class="jblock" aria-label="${esc(j.nama)}">
+          <div class="jhead">
+            <div><h3>${esc(j.nama)}</h3><div class="sta mono">STA ${fmtSTA(c.a)} – ${fmtSTA(c.b)} · ${fmtLen(c.L)}</div></div>
+            <div class="r"><div class="kumv"><b>${fmtPct(c.kum)}</b><span>${c.items.length > 1 ? "kumulatif" : "selesai"}</span></div>
+              <button type="button" class="btn btn-xs" data-act="edit-jenis" data-id="${esc(r.id)}" data-jenis="${esc(j.id)}" data-edit>${empty ? ICON.plus + "Isi segmen" : ICON.bars + "Edit segmen"}</button></div>
+          </div>
+          ${crewHTML(c)}
+          ${itemsHTML(r, j, c, S.canWrite)}
+        </section>`;
+      }
+      h += `</article>`;
+    }
+    h += `</div>`;
+    main.innerHTML = h;
+  }
+
+  /* ---------- Tooltip ---------- */
+  const tip = $("#tip");
+  let PV = null; // preview ruas object inside the jenis editor
+  function segFor(el) {
+    const r = el.closest("dialog") ? PV : byId(S.ruas, el.dataset.ruas);
+    const j = S.master.find((x) => x.id === el.dataset.jenis);
+    const g = r?.jenis?.[el.dataset.jenis]?.items?.[el.dataset.item]?.[+el.dataset.seg];
+    const it = j?.items.find((x) => x.id === el.dataset.item);
+    return g ? { g, it } : null;
+  }
+  function showTip(el) {
+    const f = segFor(el); if (!f) return hideTip();
+    const { g, it } = f;
+    tip.innerHTML = `<div><b>STA ${fmtSTA(g.dari)} → ${fmtSTA(g.sampai)}</b></div>
+      <div>${fmtLen(+g.sampai - +g.dari)} · <span class="st">${g.status === "proses" ? "Dalam proses" : "Selesai"}</span></div>
+      ${it ? `<div>${esc(it.nama)}</div>` : ""}
+      ${g.tanggal ? `<div class="mut">${esc(new Date(g.tanggal + "T00:00").toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }))}</div>` : ""}
+      ${g.pekerja != null && g.pekerja !== "" ? `<div>${esc(nf.format(+g.pekerja))} pekerja</div>` : ""}
+      ${g.catatan ? `<div class="mut">${esc(g.catatan)}</div>` : ""}`;
+    const r = el.getBoundingClientRect();
+    tip.classList.add("on");
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    let x = r.left + r.width / 2 - tw / 2; x = Math.max(8, Math.min(x, innerWidth - tw - 8));
+    let y = r.top - th - 12; if (y < 8) y = r.bottom + 12;
+    tip.style.left = x + "px"; tip.style.top = y + "px";
+  }
+  const hideTip = () => tip.classList.remove("on");
+  document.addEventListener("pointerover", (e) => { const el = e.target.closest?.("[data-seg]"); el ? showTip(el) : hideTip(); });
+  document.addEventListener("focusin", (e) => { const el = e.target.closest?.("[data-seg]"); el ? showTip(el) : hideTip(); });
+  document.addEventListener("scroll", hideTip, true);
+
+  /* ---------- Writes ---------- */
+  const LOCAL = { paket: "paket", kabupaten: "kab", di: "di", ruas: "ruas" };
+  function handleErr(e) {
+    const code = e && e.code;
+    if (code === "denied") { S.canWrite = false; render(); renderAuth(); toast("Akun ini tidak terdaftar sebagai editor. Perubahan tidak disimpan.", true); }
+    else if (code === "auth") toast("Sesi login berakhir. Silakan masuk lagi.", true);
+    else toast("Gagal menyimpan. Periksa koneksi lalu coba lagi.", true);
+  }
+  async function write(fn) {
+    try { await fn(); return true; }
+    catch (e) { console.error(e); handleErr(e); return false; }
+  }
+  // Supabase table mapping (camelCase in the app, snake_case in the database)
+  const MAP = {
+    paket: { table: "paket", key: "paket", to: (b) => ({ nama: b.nama, urut: b.order ?? 0 }), from: (r) => ({ id: r.id, nama: r.nama, order: r.urut }) },
+    kabupaten: { table: "kabupaten", key: "kab", to: (b) => ({ paket_id: b.paketId, nama: b.nama, urut: b.order ?? 0 }), from: (r) => ({ id: r.id, paketId: r.paket_id, nama: r.nama, order: r.urut }) },
+    di: { table: "di", key: "di", to: (b) => ({ kab_id: b.kabId, nama: b.nama, urut: b.order ?? 0 }), from: (r) => ({ id: r.id, kabId: r.kab_id, nama: r.nama, order: r.urut }) },
+    ruas: { table: "ruas", key: "ruas", to: (b) => ({ di_id: b.diId, kode: b.kode, ket: b.ket || "", urut: b.order ?? 0, contoh: !!b.contoh, jenis: b.jenis || {} }),
+      from: (r) => ({ id: r.id, diId: r.di_id, kode: r.kode, ket: r.ket || "", order: r.urut, ...(r.contoh ? { contoh: true } : {}), jenis: r.jenis || {} }) },
+  };
+  async function sbq(p) {
+    const { data, error } = await p;
+    if (error) {
+      const denied = error.code === "42501" || /row-level security|permission denied/i.test(error.message || "");
+      const auth = error.code === "PGRST301" || /JWT/i.test(error.message || "");
+      throw { code: denied ? "denied" : auth ? "auth" : "server", message: error.message };
+    }
+    return data;
+  }
+  const newId = () => (crypto.randomUUID ? crypto.randomUUID() : "id-" + rid() + rid());
+  function applyLocal(col, obj) {
+    const arr = S[MAP[col].key]; const i = arr.findIndex((x) => x.id === obj.id);
+    i >= 0 ? (arr[i] = obj) : arr.push(obj); render();
+  }
+  function removeLocal(col, id) { const k = MAP[col].key; S[k] = S[k].filter((x) => x.id !== id); render(); }
+  async function putDoc(col, id, body) {
+    if (S.mode !== "db") return applyLocal(col, { id, ...clone(body) });
+    const m = MAP[col]; const row = { id, ...m.to(body) };
+    const d = await sbq(sb.from(m.table).upsert(row).select("id"));
+    if (!d || !d.length) throw { code: "denied" };
+    applyLocal(col, m.from(row));
+  }
+  async function delDoc(col, id) {
+    if (S.mode !== "db") return removeLocal(col, id);
+    const m = MAP[col];
+    const d = await sbq(sb.from(m.table).delete().eq("id", id).select("id"));
+    if (!d.length && byId(S[m.key], id)) throw { code: "denied" };
+    removeLocal(col, id);
+  }
+  const strip = (o) => { const { id, ...rest } = o; return clone(rest); };
+
+  /* ---------- Dialog helpers ---------- */
+  document.addEventListener("click", (e) => { const c = e.target.closest("[data-close]"); if (c) c.closest("dialog").close(); });
+
+  function confirmBox(title, msg, yes = "Hapus") {
+    const d = $("#dlgConfirm");
+    $("#cTitle").textContent = title; $("#cMsg").textContent = msg; $("#cYes").textContent = yes;
+    return new Promise((res) => {
+      const done = (v) => { d.close(); cleanup(); res(v); };
+      const onYes = (e) => { e.preventDefault(); done(true); };
+      const onNo = () => done(false);
+      const onCancel = () => { cleanup(); res(false); };
+      const cleanup = () => { $("#formConfirm").removeEventListener("submit", onYes); $("#cNo").removeEventListener("click", onNo); d.removeEventListener("cancel", onCancel); };
+      $("#formConfirm").addEventListener("submit", onYes); $("#cNo").addEventListener("click", onNo); d.addEventListener("cancel", onCancel);
+      d.showModal(); $("#cNo").focus();
+    });
+  }
+
+  let nameCb = null;
+  function nameBox({ title, label, value = "", placeholder = "", parent, onSave }) {
+    $("#nTitle").textContent = title; $("#nLabel").textContent = label;
+    const inp = $("#nInput"); inp.value = value; inp.placeholder = placeholder; inp.removeAttribute("aria-invalid"); $("#nErr").textContent = "";
+    $("#nParentWrap").hidden = !parent;
+    if (parent) { $("#nParentLabel").textContent = parent.label; $("#nParent").innerHTML = parent.options.map((o) => `<option value="${esc(o.id)}">${esc(o.nama)}</option>`).join(""); $("#nParent").value = parent.value; }
+    nameCb = onSave; $("#dlgName").showModal(); inp.focus(); inp.select();
+  }
+  $("#formName").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const v = $("#nInput").value.trim();
+    if (!v) { $("#nErr").textContent = "Isi nama terlebih dahulu."; $("#nInput").setAttribute("aria-invalid", "true"); $("#nInput").focus(); return; }
+    const btn = $("#nSave"); btn.disabled = true;
+    const ok = await nameCb(v, $("#nParentWrap").hidden ? null : $("#nParent").value);
+    btn.disabled = false;
+    if (ok) { $("#dlgName").close(); toast("Tersimpan"); }
+  });
+
+  /* ---------- Paket / Kabupaten / D.I. ---------- */
+  const paketOpts = () => sortBy(S.paket);
+  function addPaket() {
+    nameBox({ title: "Tambah paket", label: "Nama paket", placeholder: "mis. Paket 3", onSave: async (nama) => {
+      const id = newId("paket"); const ok = await write(() => putDoc("paket", id, { nama, order: Date.now() }));
+      if (ok) { S.selPaket = id; S.selDi = null; render(); } return ok; } });
+  }
+  function editPaket() {
+    const p = byId(S.paket, S.selPaket); if (!p) return;
+    nameBox({ title: "Ubah nama paket", label: "Nama paket", value: p.nama, onSave: (nama) => write(() => putDoc("paket", p.id, { ...strip(p), nama })) });
+  }
+  async function delPaket() {
+    const p = byId(S.paket, S.selPaket); if (!p) return;
+    const kabs = kabsOf(p.id), dis = kabs.flatMap((k) => disOf(k.id)), rs = ruasOfPaket(p.id);
+    if (!(await confirmBox(`Hapus ${p.nama}?`, `${kabs.length} kabupaten, ${dis.length} D.I., dan ${rs.length} kode ruas beserta seluruh segmennya ikut terhapus. Tindakan ini tidak bisa dibatalkan.`))) return;
+    const ok = await write(async () => {
+      for (const r of rs) await delDoc("ruas", r.id);
+      for (const d of dis) await delDoc("di", d.id);
+      for (const k of kabs) await delDoc("kabupaten", k.id);
+      await delDoc("paket", p.id);
+    });
+    if (ok) toast(`${p.nama} dihapus`);
+  }
+  function addKab() {
+    nameBox({ title: "Tambah kabupaten/kota", label: "Nama kabupaten/kota", placeholder: "mis. Kab. Donggala",
+      parent: { label: "Paket", options: paketOpts(), value: S.selPaket },
+      onSave: (nama, pid) => write(() => putDoc("kabupaten", newId("kabupaten"), { paketId: pid, nama, order: Date.now() })) });
+  }
+  function editKab(id) {
+    const k = byId(S.kab, id); if (!k) return;
+    nameBox({ title: "Ubah kabupaten/kota", label: "Nama kabupaten/kota", value: k.nama,
+      parent: { label: "Paket", options: paketOpts(), value: k.paketId },
+      onSave: (nama, pid) => write(() => putDoc("kabupaten", k.id, { ...strip(k), nama, paketId: pid })) });
+  }
+  async function delKab(id) {
+    const k = byId(S.kab, id); if (!k) return;
+    const dis = disOf(id), rs = ruasOfKab(id);
+    if (!(await confirmBox(`Hapus ${k.nama}?`, dis.length ? `${dis.length} D.I. dan ${rs.length} kode ruas beserta seluruh segmennya ikut terhapus. Tindakan ini tidak bisa dibatalkan.` : "Kabupaten ini belum punya D.I."))) return;
+    const ok = await write(async () => { for (const r of rs) await delDoc("ruas", r.id); for (const d of dis) await delDoc("di", d.id); await delDoc("kabupaten", id); });
+    if (ok) toast(`${k.nama} dihapus`);
+  }
+  const kabOptsAll = () => sortBy(S.paket).flatMap((p) => kabsOf(p.id).map((k) => ({ id: k.id, nama: `${k.nama} (${p.nama})` })));
+  function addDi(kabId) {
+    nameBox({ title: "Tambah D.I.", label: "Nama D.I.", placeholder: "mis. D.I. Tindaki",
+      parent: { label: "Kabupaten/kota", options: kabOptsAll(), value: kabId },
+      onSave: async (nama, kid) => {
+        const id = newId("di"); const ok = await write(() => putDoc("di", id, { kabId: kid, nama, order: Date.now() }));
+        if (ok) { const k = byId(S.kab, kid); if (k) S.selPaket = k.paketId; S.selDi = id; render(); } return ok;
+      } });
+  }
+  function editDi() {
+    const d = byId(S.di, S.selDi); if (!d) return;
+    nameBox({ title: "Ubah D.I.", label: "Nama D.I.", value: d.nama,
+      parent: { label: "Kabupaten/kota", options: kabOptsAll(), value: d.kabId },
+      onSave: (nama, kid) => write(() => putDoc("di", d.id, { ...strip(d), nama, kabId: kid })) });
+  }
+  async function delDi() {
+    const d = byId(S.di, S.selDi); if (!d) return;
+    const rs = ruasOf(d.id);
+    if (!(await confirmBox(`Hapus ${d.nama}?`, rs.length ? `${rs.length} kode ruas beserta seluruh segmennya ikut terhapus. Tindakan ini tidak bisa dibatalkan.` : "D.I. ini belum punya kode ruas."))) return;
+    const ok = await write(async () => { for (const r of rs) await delDoc("ruas", r.id); await delDoc("di", d.id); });
+    if (ok) toast(`${d.nama} dihapus`);
+  }
+
+  /* ---------- Ruas editor ---------- */
+  let draftR = null;
+  const dlgRuas = $("#dlgRuas");
+  function openRuas(id) {
+    const r = id ? byId(S.ruas, id) : null;
+    draftR = r ? { ...clone(r), isNew: false, wasContoh: !!r.contoh } : { id: newId("ruas"), isNew: true, diId: S.selDi, kode: "", ket: "", order: Date.now(), jenis: {}, wasContoh: false };
+    $("#dRTitle").textContent = draftR.isNew ? "Tambah kode ruas" : "Ubah kode ruas";
+    $("#rKode").value = draftR.kode; $("#rKet").value = draftR.ket || "";
+    $("#rKode").removeAttribute("aria-invalid"); $("#rKodeErr").textContent = "";
+    $("#rDi").innerHTML = sortBy(S.paket).flatMap((p) => kabsOf(p.id).flatMap((k) => disOf(k.id).map((d) => `<option value="${esc(d.id)}">${esc(d.nama)} — ${esc(k.nama)}</option>`))).join("");
+    $("#rDi").value = draftR.diId;
+    $("#rContohWrap").hidden = !draftR.wasContoh; $("#rContoh").checked = !!draftR.contoh;
+    $("#btnDelRuas").hidden = draftR.isNew;
+    $("#rJenis").innerHTML = S.master.map((j) => {
+      const b = draftR.jenis?.[j.id];
+      const nSeg = b ? Object.values(b.items || {}).reduce((n, a) => n + a.length, 0) : 0;
+      return `<div class="jpick-item" data-j="${esc(j.id)}">
+        <label class="check"><input type="checkbox" data-jc ${b ? "checked" : ""}> ${esc(j.nama)}${nSeg ? ` <span class="hint" style="font-weight:500">· ${nSeg} segmen</span>` : ""}</label>
+        <div class="grid2" ${b ? "" : "hidden"}>
+          <label class="field"><span>STA awal (0%)</span><input class="mono" data-ja inputmode="decimal" autocomplete="off" value="${b ? fmtSTA(b.staAwal) : "0+000"}"></label>
+          <label class="field"><span>STA akhir (100%)</span><input class="mono" data-jb inputmode="decimal" autocomplete="off" value="${b ? fmtSTA(b.staAkhir) : ""}" placeholder="mis. 1+200"><small class="err" data-je></small></label>
+        </div></div>`;
+    }).join("");
+    dlgRuas.showModal(); $("#rKode").focus();
+  }
+  $("#rJenis").addEventListener("change", (e) => {
+    if (!e.target.matches("[data-jc]")) return;
+    const box = e.target.closest(".jpick-item"); const g = box.querySelector(".grid2"); g.hidden = !e.target.checked;
+    if (e.target.checked) { const b = box.querySelector("[data-jb]"); if (!b.value) b.focus(); }
+  });
+  $("#formRuas").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    let firstBad = null;
+    const kode = $("#rKode").value.trim();
+    if (!kode) { $("#rKode").setAttribute("aria-invalid", "true"); $("#rKodeErr").textContent = "Isi kode ruas."; firstBad = $("#rKode"); }
+    else { $("#rKode").removeAttribute("aria-invalid"); $("#rKodeErr").textContent = ""; }
+    const jenis = {}; const dropped = [];
+    for (const box of $$(".jpick-item", $("#rJenis"))) {
+      const jid = box.dataset.j, on = box.querySelector("[data-jc]").checked;
+      const ia = box.querySelector("[data-ja]"), ib = box.querySelector("[data-jb]"), er = box.querySelector("[data-je]");
+      ia.removeAttribute("aria-invalid"); ib.removeAttribute("aria-invalid"); er.textContent = "";
+      const prev = draftR.jenis?.[jid];
+      if (!on) { if (prev && Object.values(prev.items || {}).some((a) => a.length)) dropped.push(S.master.find((j) => j.id === jid)?.nama); continue; }
+      const a = parseSTA(ia.value), b = parseSTA(ib.value);
+      const bad = (el, msg) => { el.setAttribute("aria-invalid", "true"); er.textContent = msg; firstBad ||= el; };
+      if (!isFinite(a)) { bad(ia, "STA awal tidak terbaca. Contoh: 0+000."); continue; }
+      if (!isFinite(b)) { bad(ib, "STA akhir tidak terbaca. Contoh: 1+200."); continue; }
+      if (b <= a) { bad(ib, "STA akhir harus lebih besar dari STA awal."); continue; }
+      jenis[jid] = { staAwal: a, staAkhir: b, items: prev?.items || {} };
+    }
+    // keep blocks for jenis not in the current master untouched
+    Object.keys(draftR.jenis || {}).forEach((jid) => { if (!S.master.some((j) => j.id === jid)) jenis[jid] = draftR.jenis[jid]; });
+    if (firstBad) { firstBad.focus(); return; }
+    if (dropped.length && !(await confirmBox("Hapus jenis pekerjaan?", `Segmen pada ${dropped.join(", ")} di ruas ini akan ikut terhapus.`))) return;
+    const body = { diId: $("#rDi").value, kode, ket: $("#rKet").value.trim(), order: draftR.order ?? Date.now(), jenis };
+    if (draftR.wasContoh && $("#rContoh").checked) body.contoh = true;
+    const btn = $("#btnSaveRuas"); btn.disabled = true;
+    const ok = await write(() => putDoc("ruas", draftR.id, body));
+    btn.disabled = false;
+    if (ok) { dlgRuas.close(); toast(draftR.isNew ? "Kode ruas ditambahkan" : "Perubahan disimpan"); }
+  });
+  async function delRuas(id) {
+    const r = byId(S.ruas, id); if (!r) return false;
+    if (!(await confirmBox(`Hapus ruas ${r.kode}?`, "Semua jenis pekerjaan dan segmen di ruas ini akan dihapus. Tindakan ini tidak bisa dibatalkan."))) return false;
+    const ok = await write(() => delDoc("ruas", id)); if (ok) toast(`Ruas ${r.kode} dihapus`); return ok;
+  }
+  $("#btnDelRuas").addEventListener("click", async () => { if (await delRuas(draftR.id)) dlgRuas.close(); });
+
+  /* ---------- Jenis (segment) editor ---------- */
+  let draftJ = null; // {ruasId, jid, awalTxt, akhirTxt, rows:[{id,item,dariTxt,sampaiTxt,status,tanggal,catatan}]}
+  const dlgJ = $("#dlgJenis");
+  const jDef = () => S.master.find((j) => j.id === draftJ.jid);
+
+  function openJenis(ruasId, jid, focusSegId) {
+    const r = byId(S.ruas, ruasId); const j = S.master.find((x) => x.id === jid);
+    if (!r || !j || !r.jenis?.[jid]) return;
+    const b = r.jenis[jid];
+    const rows = [];
+    j.items.forEach((it) => (b.items?.[it.id] || []).slice().sort((p, q) => p.dari - q.dari).forEach((g) => rows.push({ id: g.id || rid(), item: it.id, dariTxt: fmtSTA(g.dari), sampaiTxt: fmtSTA(g.sampai), status: g.status || "selesai", tanggal: g.tanggal || "", pekerja: g.pekerja ?? "", catatan: g.catatan || "" })));
+    // urutkan berdasarkan tanggal pengerjaan: terdahulu → terbaru (tanpa tanggal di akhir), lalu urutan item, lalu STA
+    const itemIdx = (id) => j.items.findIndex((it) => it.id === id);
+    rows.sort((p, q) => (p.tanggal || "9999") .localeCompare(q.tanggal || "9999") || itemIdx(p.item) - itemIdx(q.item) || parseSTA(p.dariTxt) - parseSTA(q.dariTxt));
+    draftJ = { ruasId, jid, awalTxt: fmtSTA(b.staAwal), akhirTxt: fmtSTA(b.staAkhir), rows };
+    const D = byId(S.di, r.diId);
+    $("#dJTitle").textContent = j.nama;
+    $("#dJSub").textContent = `Ruas ${r.kode}${D ? " · " + D.nama : ""}`;
+    $("#jAwal").value = draftJ.awalTxt; $("#jAkhir").value = draftJ.akhirTxt;
+    $("#jAwal").removeAttribute("aria-invalid"); $("#jAkhir").removeAttribute("aria-invalid"); $("#jRangeErr").textContent = "";
+    renderRows(); updateJPreview();
+    dlgJ.showModal();
+    const idx = focusSegId ? draftJ.rows.findIndex((x) => x.id === focusSegId) : -1;
+    if (idx >= 0) { const tr = $(`#jBody tr[data-i="${idx}"]`); tr.classList.add("flash"); tr.scrollIntoView({ block: "nearest" }); tr.querySelector('[data-f="dariTxt"]').focus(); }
+    else if (!draftJ.rows.length) $("#btnAddRow").focus();
+  }
+  function renderRows() {
+    const j = jDef(); const body = $("#jBody");
+    $("#jSegCount").textContent = draftJ.rows.length ? `${draftJ.rows.length} segmen` : "";
+    if (!draftJ.rows.length) { body.innerHTML = `<tr><td colspan="9" class="seg-empty">Belum ada segmen. Tambahkan rentang STA yang sudah atau sedang dikerjakan untuk tiap item.</td></tr>`; return; }
+    const opts = (sel) => j.items.map((it) => `<option value="${esc(it.id)}"${it.id === sel ? " selected" : ""}>${esc(it.nama)}</option>`).join("");
+    body.innerHTML = draftJ.rows.map((g, i) => `<tr data-i="${i}">
+      <td class="n">${i + 1}</td>
+      <td><select class="inp" data-f="item" aria-label="Segmen ${i + 1}, item pekerjaan" style="min-width:220px">${opts(g.item)}</select></td>
+      <td><input class="inp mono" data-f="dariTxt" value="${esc(g.dariTxt)}" aria-label="Segmen ${i + 1}, dari STA" inputmode="decimal" style="width:108px"><small class="err" data-err></small></td>
+      <td><input class="inp mono" data-f="sampaiTxt" value="${esc(g.sampaiTxt)}" aria-label="Segmen ${i + 1}, sampai STA" inputmode="decimal" style="width:108px"></td>
+      <td class="len" data-len></td>
+      <td><select class="inp" data-f="status" aria-label="Segmen ${i + 1}, status" style="width:132px">
+        <option value="selesai"${g.status === "selesai" ? " selected" : ""}>Selesai</option>
+        <option value="proses"${g.status === "proses" ? " selected" : ""}>Dalam proses</option></select></td>
+      <td><input class="inp" type="date" data-f="tanggal" value="${esc(g.tanggal)}" aria-label="Segmen ${i + 1}, tanggal" style="width:148px"></td>
+      <td><input class="inp mono" type="number" min="0" step="1" inputmode="numeric" data-f="pekerja" value="${esc(g.pekerja)}" aria-label="Segmen ${i + 1}, jumlah pekerja" placeholder="0" style="width:120px"><small class="err" data-perr></small></td>
+      <td class="act"><button type="button" class="icon-btn" data-dup="${i}" aria-label="Duplikat segmen ${i + 1} untuk item berikutnya">${ICON.copy}</button><button type="button" class="icon-btn danger" data-del="${i}" aria-label="Hapus segmen ${i + 1}">${ICON.trash}</button></td>
+    </tr>`).join("");
+    draftJ.rows.forEach((_, i) => updateLen(i));
+  }
+  function updateLen(i) {
+    const g = draftJ.rows[i]; const cell = $(`#jBody tr[data-i="${i}"] [data-len]`); if (!cell) return;
+    const a = parseSTA(g.dariTxt), b = parseSTA(g.sampaiTxt);
+    cell.textContent = isFinite(a) && isFinite(b) && b > a ? nf.format(b - a) + " m" : "–";
+  }
+  function draftBlock() {
+    const items = {};
+    draftJ.rows.forEach((g) => { (items[g.item] ||= []).push({ id: g.id, dari: parseSTA(g.dariTxt), sampai: parseSTA(g.sampaiTxt), status: g.status, tanggal: g.tanggal, pekerja: g.pekerja === "" ? null : Number(g.pekerja), catatan: g.catatan }); });
+    return { staAwal: parseSTA(draftJ.awalTxt), staAkhir: parseSTA(draftJ.akhirTxt), items };
+  }
+  function updateJPreview() {
+    const j = jDef(), b = draftBlock();
+    PV = { id: draftJ.ruasId, jenis: { [j.id]: b } };
+    if (!(isFinite(b.staAwal) && isFinite(b.staAkhir) && b.staAkhir > b.staAwal)) { $("#jPv").innerHTML = `<div class="empty-sm">Isi STA awal dan akhir untuk melihat pratinjau.</div>`; $("#jPvStat").textContent = ""; return; }
+    const c = blockCalc(b, j);
+    $("#jPv").innerHTML = itemsHTML(PV, j, c, false);
+    $("#jPvStat").textContent = `${c.items.length > 1 ? "Kumulatif" : "Selesai"} ${fmtPct(c.kum)} · ${fmtLen(c.L)}`;
+  }
+  $("#jAwal").addEventListener("input", (e) => { draftJ.awalTxt = e.target.value; updateJPreview(); });
+  $("#jAkhir").addEventListener("input", (e) => { draftJ.akhirTxt = e.target.value; updateJPreview(); });
+  $("#jBody").addEventListener("input", (e) => {
+    const f = e.target.dataset.f; if (!f) return;
+    const i = +e.target.closest("tr").dataset.i; draftJ.rows[i][f] = e.target.value;
+    if (f === "dariTxt" || f === "sampaiTxt") updateLen(i);
+    updateJPreview();
+  });
+  $("#jBody").addEventListener("change", (e) => {
+    const f = e.target.dataset.f; if (f !== "item" && f !== "status") return;
+    draftJ.rows[+e.target.closest("tr").dataset.i][f] = e.target.value; updateJPreview();
+  });
+  $("#jBody").addEventListener("click", (e) => {
+    const del = e.target.closest("[data-del]"), dup = e.target.closest("[data-dup]");
+    if (del) {
+      const i = +del.dataset.del; draftJ.rows.splice(i, 1); renderRows(); updateJPreview();
+      ($(`#jBody tr[data-i="${Math.min(i, draftJ.rows.length - 1)}"] [data-f="dariTxt"]`) || $("#btnAddRow")).focus();
+    } else if (dup) {
+      const i = +dup.dataset.dup, src = draftJ.rows[i], items = jDef().items;
+      const nextItem = items[(items.findIndex((x) => x.id === src.item) + 1) % items.length].id;
+      draftJ.rows.splice(i + 1, 0, { ...src, id: rid(), item: nextItem });
+      renderRows(); updateJPreview();
+      const tr = $(`#jBody tr[data-i="${i + 1}"]`); tr.classList.add("flash"); tr.querySelector('[data-f="item"]').focus();
+    }
+  });
+  $("#btnAddRow").addEventListener("click", () => {
+    const j = jDef(); const last = draftJ.rows[draftJ.rows.length - 1];
+    const item = last?.item || j.items[0].id;
+    const awal = parseSTA(draftJ.awalTxt), akhir = parseSTA(draftJ.akhirTxt);
+    const ends = draftJ.rows.filter((g) => g.item === item).map((g) => parseSTA(g.sampaiTxt)).filter(isFinite);
+    let from = ends.length ? Math.max(...ends) : (isFinite(awal) ? awal : 0);
+    if (isFinite(akhir) && from >= akhir) from = isFinite(awal) ? awal : 0;
+    let to = from + 100; if (isFinite(akhir)) to = Math.min(to, akhir);
+    draftJ.rows.push({ id: rid(), item, dariTxt: fmtSTA(from), sampaiTxt: fmtSTA(to), status: "selesai", tanggal: new Date().toISOString().slice(0, 10), pekerja: "", catatan: "" });
+    renderRows(); updateJPreview();
+    const tr = $(`#jBody tr[data-i="${draftJ.rows.length - 1}"]`); tr.classList.add("flash"); tr.scrollIntoView({ block: "nearest" }); tr.querySelector('[data-f="item"]').focus();
+  });
+  $("#formJenis").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    let firstBad = null;
+    const bad = (el, errEl, msg) => { el.setAttribute("aria-invalid", "true"); if (errEl) errEl.textContent = msg; firstBad ||= el; };
+    const a = parseSTA(draftJ.awalTxt), b = parseSTA(draftJ.akhirTxt);
+    $("#jAwal").removeAttribute("aria-invalid"); $("#jAkhir").removeAttribute("aria-invalid"); $("#jRangeErr").textContent = "";
+    if (!isFinite(a)) bad($("#jAwal"), $("#jRangeErr"), "STA awal tidak terbaca. Contoh: 0+000.");
+    else if (!isFinite(b)) bad($("#jAkhir"), $("#jRangeErr"), "STA akhir tidak terbaca. Contoh: 1+200.");
+    else if (b <= a) bad($("#jAkhir"), $("#jRangeErr"), "STA akhir harus lebih besar dari STA awal.");
+    const items = {};
+    draftJ.rows.forEach((g, i) => {
+      const tr = $(`#jBody tr[data-i="${i}"]`); const ia = tr.querySelector('[data-f="dariTxt"]'), ib = tr.querySelector('[data-f="sampaiTxt"]'), er = tr.querySelector("[data-err]");
+      ia.removeAttribute("aria-invalid"); ib.removeAttribute("aria-invalid"); er.textContent = "";
+      const p = parseSTA(g.dariTxt), q = parseSTA(g.sampaiTxt);
+      if (!isFinite(p)) return bad(ia, er, "STA tidak terbaca.");
+      if (!isFinite(q)) return bad(ib, er, "STA tidak terbaca.");
+      if (q <= p) return bad(ib, er, "Harus lebih besar dari “Dari”.");
+      if (isFinite(a) && isFinite(b) && (p < a || q > b)) return bad(p < a ? ia : ib, er, `Di luar ${fmtSTA(a)}–${fmtSTA(b)}.`);
+      const pkTxt = String(g.pekerja ?? "").trim(), pk = pkTxt === "" ? null : Number(pkTxt);
+      const ip = tr.querySelector('[data-f="pekerja"]'), ep = tr.querySelector("[data-perr]");
+      ip.removeAttribute("aria-invalid"); ep.textContent = "";
+      if (pk !== null && !(Number.isInteger(pk) && pk >= 0)) return bad(ip, ep, "Isi bilangan bulat, mis. 12.");
+      (items[g.item] ||= []).push({ id: g.id, dari: p, sampai: q, status: g.status, tanggal: g.tanggal || "", pekerja: pk, catatan: String(g.catatan || "").trim() });
+    });
+    if (firstBad) { firstBad.focus(); toast("Periksa kolom yang ditandai merah.", true); return; }
+    Object.values(items).forEach((arr) => arr.sort((x, y) => x.dari - y.dari));
+    const r = byId(S.ruas, draftJ.ruasId);
+    if (!r) { toast("Ruas ini sudah dihapus orang lain.", true); dlgJ.close(); return; }
+    const body = strip(r);
+    // keep segments of items that are no longer in the master list
+    const prevItems = body.jenis?.[draftJ.jid]?.items || {};
+    Object.keys(prevItems).forEach((iid) => { if (!jDef().items.some((it) => it.id === iid)) items[iid] = prevItems[iid]; });
+    body.jenis = { ...(body.jenis || {}), [draftJ.jid]: { staAwal: a, staAkhir: b, items } };
+    const btn = $("#btnSaveJ"); btn.disabled = true; btn.textContent = "Menyimpan…";
+    const ok = await write(() => putDoc("ruas", r.id, body));
+    btn.disabled = false; btn.textContent = "Simpan";
+    if (ok) { dlgJ.close(); toast("Stripmap disimpan"); }
+  });
+
+  /* ---------- Settings (master) ---------- */
+  let draftM = null;
+  function openSettings() {
+    draftM = clone(S.master);
+    $("#sJudul").value = S.judul || ""; $("#sErr").textContent = "";
+    renderMaster(); $("#dlgSet").showModal(); $("#sJudul").focus();
+  }
+  function renderMaster() {
+    $("#sMaster").innerHTML = draftM.map((j, ji) => `<div class="mset" data-ji="${ji}">
+      <div class="mset-h"><input class="inp" data-jn value="${esc(j.nama)}" aria-label="Nama jenis pekerjaan ${ji + 1}" placeholder="Nama jenis pekerjaan">
+        <button type="button" class="icon-btn danger" data-jdel aria-label="Hapus jenis ${esc(j.nama)}">${ICON.trash}</button></div>
+      <div class="mitems">${j.items.map((it, ii) => `<div class="mitem" data-ii="${ii}"><input class="inp" data-in value="${esc(it.nama)}" aria-label="Item ${ii + 1} pada ${esc(j.nama)}" placeholder="Nama item">
+        <button type="button" class="icon-btn sm danger" data-idel aria-label="Hapus item ${esc(it.nama)}">${ICON.x}</button></div>`).join("")}
+        <div><button type="button" class="btn btn-xs btn-ghost" data-iadd>${ICON.plus}Tambah item</button></div></div>
+    </div>`).join("");
+  }
+  $("#sMaster").addEventListener("input", (e) => {
+    const box = e.target.closest("[data-ji]"); if (!box) return; const j = draftM[+box.dataset.ji];
+    if (e.target.matches("[data-jn]")) j.nama = e.target.value;
+    if (e.target.matches("[data-in]")) j.items[+e.target.closest("[data-ii]").dataset.ii].nama = e.target.value;
+  });
+  $("#sMaster").addEventListener("click", (e) => {
+    const box = e.target.closest("[data-ji]"); if (!box) return; const ji = +box.dataset.ji, j = draftM[ji];
+    if (e.target.closest("[data-jdel]")) { draftM.splice(ji, 1); renderMaster(); }
+    else if (e.target.closest("[data-idel]")) { j.items.splice(+e.target.closest("[data-ii]").dataset.ii, 1); renderMaster(); }
+    else if (e.target.closest("[data-iadd]")) { j.items.push({ id: "it-" + rid(), nama: "" }); renderMaster(); const ins = $$(`[data-ji="${ji}"] [data-in]`); ins[ins.length - 1]?.focus(); }
+  });
+  $("#sAddJ").addEventListener("click", () => { draftM.push({ id: "j-" + rid(), nama: "", items: [{ id: "it-" + rid(), nama: "" }] }); renderMaster(); $(`[data-ji="${draftM.length - 1}"] [data-jn]`).focus(); });
+  $("#formSet").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    draftM.forEach((j) => { j.nama = j.nama.trim(); j.items.forEach((it) => (it.nama = it.nama.trim())); });
+    const blank = draftM.find((j) => !j.nama || !j.items.length || j.items.some((it) => !it.nama));
+    if (!draftM.length || blank) { $("#sErr").textContent = "Setiap jenis pekerjaan perlu nama dan minimal satu item bernama."; return; }
+    const keptJ = new Set(draftM.map((j) => j.id)), keptI = new Set(draftM.flatMap((j) => j.items.map((it) => j.id + "/" + it.id)));
+    let lost = 0;
+    S.ruas.forEach((r) => Object.entries(r.jenis || {}).forEach(([jid, b]) => Object.entries(b.items || {}).forEach(([iid, arr]) => { if (!keptJ.has(jid) || !keptI.has(jid + "/" + iid)) lost += arr.length; })));
+    if (lost && !(await confirmBox("Hapus item pekerjaan?", `${lost} segmen pada jenis/item yang dihapus tidak akan ditampilkan lagi dan tidak dihitung dalam persen.`, "Simpan"))) return;
+    const btn = $("#sSave"); btn.disabled = true;
+    const judul = $("#sJudul").value.trim();
+    const ok = await write(async () => {
+      if (S.mode === "db") {
+        const d = await sbq(sb.from("config").upsert({ id: 1, judul, master: draftM }).select("id"));
+        if (!d || !d.length) throw { code: "denied" };
+      }
+      S.judul = judul; S.master = clone(draftM); render();
+    });
+    btn.disabled = false;
+    if (ok) { $("#dlgSet").close(); toast("Pengaturan disimpan"); }
+  });
+
+  /* ---------- Events ---------- */
+  document.addEventListener("click", (e) => {
+    const seg = e.target.closest("#main button[data-seg]");
+    if (seg && S.canWrite) {
+      hideTip();
+      const r = byId(S.ruas, seg.dataset.ruas); const g = r?.jenis?.[seg.dataset.jenis]?.items?.[seg.dataset.item]?.[+seg.dataset.seg];
+      return openJenis(seg.dataset.ruas, seg.dataset.jenis, g?.id);
+    }
+    const tab = e.target.closest("[data-paket]");
+    if (tab) { S.selPaket = tab.dataset.paket; S.selDi = null; render(); return; }
+    const di = e.target.closest("[data-di]");
+    if (di) { S.selDi = di.dataset.di; render(); if (!mq.matches) { $("#nav").open = false; $("#main").scrollIntoView({ block: "start" }); } return; }
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    const { act, id } = b.dataset;
+    ({
+      "add-paket": addPaket, "edit-paket": editPaket, "del-paket": delPaket,
+      "add-kab": addKab, "edit-kab": () => editKab(id), "del-kab": () => delKab(id),
+      "add-di": () => addDi(id), "edit-di": editDi, "del-di": delDi,
+      "add-ruas": () => openRuas(null), "edit-ruas": () => openRuas(id), "del-ruas": () => delRuas(id),
+      "edit-jenis": () => openJenis(id, b.dataset.jenis),
+    })[act]?.();
+  });
+  $("#btnSettings").addEventListener("click", openSettings);
+  let qT; $("#q").addEventListener("input", (e) => { clearTimeout(qT); qT = setTimeout(() => { S.q = e.target.value.trim().toLowerCase(); render(); }, 150); });
+  const mq = matchMedia("(min-width: 1040px)");
+  mq.addEventListener?.("change", () => { if (mq.matches) $("#nav").open = true; });
+  if (!mq.matches) $("#nav").open = false;
+
+  /* ---------- PDF export ---------- */
+  async function loadJsPDF() {
+    if (window.jspdf) return window.jspdf.jsPDF;
+    await new Promise((res, rej) => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+    return window.jspdf.jsPDF;
+  }
+  $("#btnExport").addEventListener("click", () => {
+    const D = byId(S.di, S.selDi), K = D && byId(S.kab, D.kabId), P = byId(S.paket, S.selPaket);
+    $("#exDi").textContent = D ? `${D.nama} · ${ruasOf(D.id).length} ruas` : "Belum ada D.I.";
+    $("#exKab").textContent = K ? `${K.nama} · ${ruasOfKab(K.id).length} ruas` : "–";
+    $("#exPaket").textContent = P ? `${P.nama} · ${ruasOfPaket(P.id).length} ruas` : "–";
+    $('#formExport input[value="di"]').disabled = !D; $('#formExport input[value="kab"]').disabled = !K;
+    if (!D) $('#formExport input[value="paket"]').checked = true;
+    $("#eExport").textContent = ""; $("#dlgExport").showModal();
+  });
+  $("#formExport").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target); const paper = fd.get("paper"), scope = fd.get("scope");
+    const btn = $("#btnDoExport"); btn.disabled = true; btn.textContent = "Menyiapkan…"; $("#eExport").textContent = "";
+    try {
+      const jsPDF = await loadJsPDF();
+      const { blob, name } = buildPDF(jsPDF, paper, scope);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `stripmap-${name}-${new Date().toISOString().slice(0, 10)}.pdf`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      $("#dlgExport").close(); toast("PDF diunduh");
+    } catch (err) {
+      console.error(err);
+      $("#eExport").textContent = "Gagal membuat PDF. Periksa koneksi lalu coba lagi.";
+    } finally { btn.disabled = false; btn.textContent = "Unduh PDF"; }
+  });
+
+  function buildPDF(jsPDF, paper, scope) {
+    const P = byId(S.paket, S.selPaket), D = byId(S.di, S.selDi), K = D && byId(S.kab, D.kabId);
+    let kabs = kabsOf(P.id), onlyDi = null, label = P.nama;
+    if (scope === "kab" && K) { kabs = [K]; label = `${P.nama} · ${K.nama}`; }
+    if (scope === "di" && D) { kabs = [K]; onlyDi = D.id; label = `${P.nama} · ${K.nama} · ${D.nama}`; }
+    const slug = (scope === "di" && D ? D.nama : scope === "kab" && K ? K.nama : P.nama).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: paper });
+    const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = 14;
+    const k = paper === "a3" ? 1.25 : 1;
+    const INK = [21, 24, 29], MUT = [91, 98, 110], TRK = [220, 223, 228], SEG = [245, 198, 44], SOFT = [251, 232, 166], EDGE = [201, 151, 0], KUM = [167, 120, 0], BG = [245, 246, 248];
+    const today = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+    let y = 0, page = 1;
+    const LW = 58 * k, PW = 22 * k, BX = M + LW, BW = W - M - PW - BX, RH = 6.2 * k, BH = 3 * k;
+    function hatch(x, yy, w, h) {
+      doc.setFillColor(...SOFT); doc.rect(x, yy, w, h, "F");
+      doc.setDrawColor(...SEG); doc.setLineWidth(0.45);
+      for (let t = x - h; t < x + w; t += 1.2) {
+        let x1 = t, y1 = yy + h, x2 = t + h, y2 = yy;
+        if (x1 < x) { y1 -= x - x1; x1 = x; }
+        if (x2 > x + w) { y2 += x2 - (x + w); x2 = x + w; }
+        if (x2 > x1) doc.line(x1, y1, x2, y2);
+      }
+      doc.setDrawColor(...EDGE); doc.setLineWidth(0.2); doc.rect(x, yy, w, h, "S");
+    }
+    const head = (first) => {
+      doc.setTextColor(...INK); doc.setFont("helvetica", "bold"); doc.setFontSize((first ? 22 : 12) * k);
+      doc.text(first ? "REKAP STRIPMAP" : (S.judul || "Rekap Stripmap"), M, M + (first ? 8 : 4) * k);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9 * k); doc.setTextColor(...MUT);
+      doc.text("Per " + today, W - M, M + (first ? 8 : 4) * k, { align: "right" });
+      if (first) { doc.setFontSize(10 * k); doc.setTextColor(...INK); doc.text([S.judul, label].filter(Boolean).join(" — "), M, M + 14 * k); }
+      y = M + (first ? 22 : 11) * k;
+    };
+    const foot = () => {
+      const fy = H - 7; doc.setFontSize(7.5 * k); doc.setTextColor(...MUT);
+      doc.setFillColor(...SEG); doc.rect(M, fy - 2.4, 6, 2.6, "F"); doc.text("Selesai", M + 8, fy);
+      hatch(M + 24, fy - 2.4, 6, 2.6); doc.text("Dalam proses", M + 32, fy);
+      doc.setFillColor(...TRK); doc.rect(M + 56, fy - 2.4, 6, 2.6, "F"); doc.text("Belum", M + 64, fy);
+      doc.setFillColor(...KUM); doc.rect(M + 76, fy - 2.4, 6, 2.6, "F"); doc.text("Kumulatif (rata-rata item)", M + 84, fy);
+      doc.text("Halaman " + page, W - M, fy, { align: "right" });
+    };
+    const ensure = (h) => { if (y + h > H - 12) { foot(); doc.addPage(); page++; head(false); } };
+    head(true);
+    let any = false;
+    for (const kb of kabs) {
+      for (const d of disOf(kb.id)) {
+        if (onlyDi && d.id !== onlyDi) continue;
+        const rs = ruasOf(d.id);
+        ensure(14 * k);
+        doc.setDrawColor(...INK); doc.setLineWidth(0.6); doc.line(M, y - 4 * k, M, y + 1);
+        doc.setTextColor(...INK); doc.setFont("helvetica", "bold"); doc.setFontSize(12 * k);
+        doc.text(`${kb.nama.toUpperCase()} › ${d.nama.toUpperCase()}`, M + 3, y);
+        y += 6 * k;
+        if (!rs.length) { doc.setFont("helvetica", "normal"); doc.setFontSize(8.5 * k); doc.setTextColor(...MUT); doc.text("Belum ada kode ruas.", M + 3, y); y += 8 * k; continue; }
+        for (const r of rs) {
+          const js = jenisOf(r);
+          if (!js.length) { ensure(8 * k); doc.setFont("helvetica", "bold"); doc.setFontSize(9.5 * k); doc.setTextColor(...INK); doc.text(`Ruas ${r.kode} — belum ada jenis pekerjaan`, M + 3, y); y += 7 * k; continue; }
+          for (const j of js) {
+            any = true;
+            const c = blockCalc(r.jenis[j.id], j);
+            const w = latestCrew(c), crewH = w ? 4.2 * k : 0;
+            const n = c.items.length, blockH = 9 * k + crewH + n * RH + 4.5 * k + (n > 1 ? RH + 1.5 : 0) + 6;
+            ensure(blockH);
+            doc.setFillColor(...BG); doc.roundedRect(M, y - 4 * k, W - 2 * M, blockH - 1, 2.5, 2.5, "F");
+            doc.setTextColor(...INK); doc.setFont("helvetica", "bold"); doc.setFontSize(10 * k);
+            doc.text(`Ruas ${r.kode}  ·  ${j.nama.toUpperCase()}`, M + 3, y + 0.5);
+            doc.text(`${fmtPct(c.kum)} ${n > 1 ? "kumulatif" : "selesai"}`, W - M - 3, y + 0.5, { align: "right" });
+            doc.setFont("helvetica", "normal"); doc.setFontSize(7.5 * k); doc.setTextColor(...MUT);
+            doc.text(`STA ${fmtSTA(c.a)} – ${fmtSTA(c.b)} · ${fmtLen(c.L)}${r.ket ? " · " + r.ket : ""}`, M + 3, y + 4.2 * k);
+            if (w) {
+              const dt = new Date(w.tgl + "T00:00").toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+              const br = Object.entries(w.per);
+              const lead = "Jumlah pekerja (" + dt + "): ";
+              const val = w.any ? nf.format(w.total) + " orang" : "belum diisi";
+              doc.setFontSize(7.5 * k); doc.setTextColor(...MUT); doc.text(lead, M + 3, y + 8.2 * k);
+              const lx = M + 3 + doc.getTextWidth(lead);
+              doc.setFont("helvetica", "bold"); doc.setTextColor(...INK); doc.text(val, lx, y + 8.2 * k);
+              if (br.length > 1) {
+                const vx = lx + doc.getTextWidth(val + "  ");
+                doc.setFont("helvetica", "normal"); doc.setTextColor(...MUT);
+                doc.text(doc.splitTextToSize("· " + br.map(([nm, v]) => `${nm} ${nf.format(v)}`).join(" · "), W - M - 3 - vx)[0], vx, y + 8.2 * k);
+              }
+            }
+            y += 9 * k + crewH;
+            for (const x of c.items) {
+              doc.setFont("helvetica", "normal"); doc.setFontSize(8 * k); doc.setTextColor(...INK);
+              doc.text(x.it.nama, M + 3, y + BH - 0.4);
+              doc.setFillColor(...TRK); doc.roundedRect(BX, y, BW, BH, BH / 2, BH / 2, "F");
+              x.segs.forEach((g) => {
+                const p = Math.max(+g.dari, c.a), q = Math.min(+g.sampai, c.b); if (!(q > p) || !c.L) return;
+                const sx = BX + ((p - c.a) / c.L) * BW, sw = Math.max(0.4, ((q - p) / c.L) * BW);
+                if (g.status === "proses") hatch(sx, y, sw, BH);
+                else { doc.setFillColor(...SEG); doc.rect(sx, y, sw, BH, "F"); doc.setDrawColor(...EDGE); doc.setLineWidth(0.2); doc.line(sx, y, sx, y + BH); doc.line(sx + sw, y, sx + sw, y + BH); }
+              });
+              doc.setFont("helvetica", "bold"); doc.setFontSize(8.5 * k); doc.text(fmtPct(x.pct), W - M - 3, y + BH - 0.3, { align: "right" });
+              y += RH;
+            }
+            doc.setFontSize(6.3 * k);
+            const ry = y - RH + BH;
+            [0, 25, 50, 75, 100].forEach((pc) => {
+              const tx = BX + (BW * pc) / 100, al = pc === 0 ? "left" : pc === 100 ? "right" : "center";
+              doc.setDrawColor(...MUT); doc.setLineWidth(0.15); doc.line(tx, ry + 0.6, tx, ry + 1.5);
+              doc.setTextColor(...INK); doc.setFont("helvetica", "bold"); doc.text(pc + "%", tx, ry + 4 * k, { align: al });
+              doc.setTextColor(...MUT); doc.setFont("helvetica", "normal"); doc.text("STA " + fmtSTA(c.a + (c.L * pc) / 100), tx, ry + 6.6 * k, { align: al });
+            });
+            y += 4.5 * k;
+            if (n > 1) {
+              doc.setDrawColor(...TRK); doc.setLineWidth(0.2); doc.line(M + 3, y - 1, W - M - 3, y - 1);
+              y += 1.5;
+              doc.setFont("helvetica", "bold"); doc.setFontSize(8.5 * k); doc.setTextColor(...INK); doc.text("Kumulatif", M + 3, y + BH - 0.4);
+              doc.setFillColor(...TRK); doc.roundedRect(BX, y, BW, BH, BH / 2, BH / 2, "F");
+              if (c.kum > 0) { doc.setFillColor(...KUM); doc.roundedRect(BX, y, Math.max(BH, (BW * Math.min(100, c.kum)) / 100), BH, BH / 2, BH / 2, "F"); }
+              doc.setFontSize(9.5 * k); doc.text(fmtPct(c.kum), W - M - 3, y + BH - 0.2, { align: "right" });
+              y += RH;
+            }
+            y += 6;
+          }
+        }
+        y += 2;
+      }
+    }
+    if (!any) { doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(...MUT); doc.text("Belum ada stripmap untuk dicetak.", M, y + 4); }
+    foot();
+    return { blob: doc.output("blob"), name: slug || "irigasi" };
+  }
+
+  /* ---------- Auth: viewer / editor ---------- */
+  const GICON = '<svg class="gbtn" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.3-.4-3.5z"/></svg>';
+  const EYE = '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  function renderAuth() {
+    const el = $("#auth"); if (!el) return;
+    if (S.mode !== "db") { el.innerHTML = ""; return; }
+    const u = S.user, ed = !!S.role;
+    const who = u ? `<span class="who">${esc(u.email)}</span>` : "";
+    const chip = `<span class="mode${ed ? " ed" : ""}">${u && u.avatar ? `<img src="${esc(u.avatar)}" alt="" referrerpolicy="no-referrer">` : `<span class="dot">${ed ? ICON.pencil : EYE}</span>`}${ed ? (S.role === "admin" ? "Mode admin" : "Mode editor") : "Mode viewer"}${who}</span>`;
+    let btns = "";
+    if (!u) btns += `<button type="button" class="btn btn-sm" data-auth="login">${GICON}Masuk editor</button>`;
+    if (!ed) btns += `<button type="button" class="btn btn-sm" data-auth="request">Minta akses editor</button>`;
+    if (S.role === "admin") btns += `<button type="button" class="btn btn-sm" data-auth="editors">Kelola editor</button>`;
+    if (u) btns += `<button type="button" class="btn btn-sm btn-ghost" data-auth="logout">Keluar</button>`;
+    el.innerHTML = chip + btns;
+  }
+  async function setUser(u) {
+    S.user = u ? { email: (u.email || "").toLowerCase(), avatar: u.user_metadata?.avatar_url || "" } : null;
+    S.role = null;
+    if (S.user && S.user.email) {
+      try { const d = await sbq(sb.from("editors").select("role").eq("email", S.user.email).maybeSingle()); S.role = d?.role || null; }
+      catch (e) { console.error(e); }
+    }
+    S.canWrite = !!S.role;
+    renderAuth(); render();
+  }
+  async function login() {
+    const { error } = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: location.origin + location.pathname } });
+    if (error) toast("Gagal membuka login Google. Coba lagi.", true);
+  }
+  async function logout() { await sb.auth.signOut(); toast("Anda sudah keluar"); }
+  function openRequest() {
+    const to = CONFIG.ADMIN_EMAIL;
+    $("#rqMail").textContent = to;
+    const me = S.user?.email;
+    $("#rqHint").textContent = me ? `Anda sedang masuk sebagai ${me}. Jika ini alamat yang ingin didaftarkan, sebutkan di email.` : "Tombol di bawah membuka aplikasi email Anda. Jika tidak terbuka, salin alamat di atas.";
+    const subject = "Permintaan akses editor Stripmap Irigasi";
+    const body = `Halo Admin,\n\nSaya ingin meminta akses editor untuk Stripmap Irigasi (${location.host}).\n\nNama: \nPerusahaan / jabatan: \nAlamat Gmail untuk login: ${me || ""}\n\nTerima kasih.`;
+    $("#rqSend").href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    $("#dlgReq").showModal();
+  }
+  $("#rqCopy").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(CONFIG.ADMIN_EMAIL); toast("Alamat email disalin"); }
+    catch { const r = document.createRange(); r.selectNodeContents($("#rqMail")); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); toast("Tekan Ctrl+C untuk menyalin"); }
+  });
+  $("#formReq").addEventListener("submit", (e) => e.preventDefault());
+
+  // Admin: manage editors
+  let EDS = [];
+  async function loadEditors() {
+    try { EDS = await sbq(sb.from("editors").select("email, role, added_at").order("added_at")); }
+    catch (e) { EDS = []; $("#edErr").textContent = "Daftar editor tidak bisa dimuat."; }
+    renderEditors();
+  }
+  function renderEditors() {
+    $("#edList").innerHTML = EDS.length ? EDS.map((x) => `<div class="ed-row"><span class="em">${esc(x.email)}</span><span class="rl ${x.role === "admin" ? "admin" : ""}">${x.role === "admin" ? "Admin" : "Editor"}</span>
+      ${x.email === S.user?.email ? `<span class="hint">Anda</span>` : `<button type="button" class="icon-btn danger" data-rm="${esc(x.email)}" aria-label="Hapus ${esc(x.email)}">${ICON.trash}</button>`}</div>`).join("")
+      : `<div class="ed-row"><span class="em hint">Belum ada editor.</span></div>`;
+  }
+  function openEditors() { $("#edErr").textContent = ""; $("#edEmail").value = ""; $("#edRole").value = "editor"; $("#dlgEd").showModal(); $("#edEmail").focus(); loadEditors(); }
+  $("#formEd").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = $("#edEmail").value.trim().toLowerCase(), role = $("#edRole").value;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { $("#edErr").textContent = "Tulis alamat email yang valid, mis. nama@gmail.com."; $("#edEmail").setAttribute("aria-invalid", "true"); $("#edEmail").focus(); return; }
+    $("#edEmail").removeAttribute("aria-invalid"); $("#edErr").textContent = "";
+    const btn = $("#edAdd"); btn.disabled = true;
+    try { const d = await sbq(sb.from("editors").upsert({ email, role }).select("email")); if (!d.length) throw { code: "denied" }; $("#edEmail").value = ""; toast(`${email} ditambahkan sebagai ${role}`); await loadEditors(); }
+    catch (err) { $("#edErr").textContent = err.code === "denied" ? "Hanya admin yang bisa menambah editor." : "Gagal menyimpan. Coba lagi."; }
+    btn.disabled = false;
+  });
+  $("#edList").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-rm]"); if (!b) return;
+    const email = b.dataset.rm;
+    if (!(await confirmBox(`Hapus akses ${email}?`, "Orang ini akan kembali ke mode viewer dan tidak bisa mengubah data lagi.", "Hapus akses"))) return;
+    try { await sbq(sb.from("editors").delete().eq("email", email)); toast("Akses editor dihapus"); await loadEditors(); }
+    catch { $("#edErr").textContent = "Gagal menghapus. Coba lagi."; }
+  });
+  $("#auth").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-auth]"); if (!b) return;
+    ({ login, logout, request: openRequest, editors: openEditors })[b.dataset.auth]?.();
+  });
+
+  /* ---------- Boot ---------- */
+  function startDemo() {
+    const d = JSON.parse($("#demo-data").textContent);
+    S.paket = d.paket; S.kab = d.kabupaten; S.di = d.di; S.ruas = d.ruas; S.mode = "demo"; S.canWrite = true; render();
+  }
+  function applyConfig(v) {
+    S.judul = v?.judul || "";
+    S.master = Array.isArray(v?.master) && v.master.length ? clone(v.master) : DEFAULT_MASTER;
+  }
+  async function loadAll() {
+    const [p, k, d, r, c] = await Promise.all([
+      sbq(sb.from("paket").select("*")), sbq(sb.from("kabupaten").select("*")), sbq(sb.from("di").select("*")),
+      sbq(sb.from("ruas").select("*")), sbq(sb.from("config").select("*").eq("id", 1).maybeSingle()),
+    ]);
+    S.paket = p.map(MAP.paket.from); S.kab = k.map(MAP.kabupaten.from); S.di = d.map(MAP.di.from); S.ruas = r.map(MAP.ruas.from);
+    applyConfig(c);
+    ["paket", "kabupaten", "di", "ruas", "meta"].forEach((x) => S.loaded.add(x));
+  }
+  function subscribe() {
+    const ch = sb.channel("stripmap");
+    Object.keys(MAP).forEach((col) => {
+      ch.on("postgres_changes", { event: "*", schema: "public", table: MAP[col].table }, (pl) => {
+        if (pl.eventType === "DELETE") { if (pl.old?.id) removeLocal(col, pl.old.id); }
+        else if (pl.new?.id) applyLocal(col, MAP[col].from(pl.new));
+      });
+    });
+    ch.on("postgres_changes", { event: "*", schema: "public", table: "config" }, (pl) => { if (pl.new) { applyConfig(pl.new); render(); } });
+    ch.subscribe();
+  }
+  async function boot() {
+    if (!window.supabase || !isConfigured()) return startDemo();
+    sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" } });
+    S.mode = "db"; S.canWrite = false; render(); renderAuth();
+    sb.auth.onAuthStateChange((_ev, session) => { setTimeout(() => setUser(session?.user || null), 0); });
+    try { await loadAll(); } catch (e) { console.error(e); S.mode = "error"; render(); return; }
+    render();
+    subscribe();
+    // refresh after the tab comes back, in case realtime missed something
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) loadAll().then(render).catch(() => {}); });
+  }
+  boot();
+})();
+</script>
+</body>
+</html>

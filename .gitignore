@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+
+# Cadangan lokal (riwayat versi dicatat oleh Git)
+index-sebelum-*.html
+index-claudeai-cadangan.html
+
+# Pengaturan lokal Claude
+.claude/
