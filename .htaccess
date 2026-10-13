@@ -1,0 +1,15 @@
+# Paksa HTTPS
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Folder .git dan semua file tersembunyi (.gitignore, .htaccess, dll.) tidak boleh dibuka dari browser
+RewriteRule (^|/)\. - [F,L]
+
+# File setup & dokumentasi hanya untuk tim, bukan untuk pengunjung website
+<FilesMatch "\.(sql|md|txt)$">
+  Require all denied
+</FilesMatch>
+
+# Jangan tampilkan daftar isi folder
+Options -Indexes
