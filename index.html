@@ -28,6 +28,8 @@
   --seg-edge: #c99700;
   --seg-ink: #3d3000;
   --kum: #a77800;
+  --eks: #6f8299;
+  --eks-bg: #cdd6e1;
   --accent: #2f66f5;
   --danger: #c93434;
   --shadow: 0 1px 2px rgba(20, 28, 45, .05), 0 10px 30px rgba(20, 28, 45, .06);
@@ -42,7 +44,7 @@
   :root:not([data-theme="light"]) {
     --bg: #0e1013; --shell: #15181c; --surface: #1b1f24; --surface-2: #22262c; --line: #2c3239;
     --fg: #eceef1; --muted: #a2a9b4; --track: #2f353d; --seg: #f2c230; --seg-soft: #5a4a14;
-    --seg-edge: #a87f00; --seg-ink: #2a2000; --kum: #e6b325; --accent: #7b9cff; --danger: #f07070;
+    --seg-edge: #a87f00; --seg-ink: #2a2000; --kum: #e6b325; --eks: #8fa3bb; --eks-bg: #36414f; --accent: #7b9cff; --danger: #f07070;
     --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.25); --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
     --scrim: rgba(0,0,0,.6);
     color-scheme: dark;
@@ -51,7 +53,7 @@
 :root[data-theme="dark"] {
   --bg: #0e1013; --shell: #15181c; --surface: #1b1f24; --surface-2: #22262c; --line: #2c3239;
   --fg: #eceef1; --muted: #a2a9b4; --track: #2f353d; --seg: #f2c230; --seg-soft: #5a4a14;
-  --seg-edge: #a87f00; --seg-ink: #2a2000; --kum: #e6b325; --accent: #7b9cff; --danger: #f07070;
+  --seg-edge: #a87f00; --seg-ink: #2a2000; --kum: #e6b325; --eks: #8fa3bb; --eks-bg: #36414f; --accent: #7b9cff; --danger: #f07070;
   --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.25); --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
   --scrim: rgba(0,0,0,.6);
   color-scheme: dark;
@@ -185,6 +187,21 @@ h1.title { margin: 0; font-size: clamp(26px, 3.4vw, 38px); font-weight: 800; let
 .sw.prog { background: repeating-linear-gradient(135deg, var(--seg) 0 3px, var(--seg-soft) 3px 6px); box-shadow: inset 0 0 0 1px var(--seg-edge); }
 .sw.none { background: var(--track); }
 .sw.kum { background: var(--kum); }
+.sw.eks { background: repeating-linear-gradient(45deg, var(--eks) 0 1.5px, var(--eks-bg) 1.5px 5px); }
+.eks { position: absolute; top: 0; bottom: 0; z-index: 3; border-radius: 2px; background: repeating-linear-gradient(45deg, var(--eks) 0 1.5px, var(--eks-bg) 1.5px 5px); box-shadow: inset 0 0 0 1px var(--eks); }
+.eks.start { border-top-left-radius: 999px; border-bottom-left-radius: 999px; }
+.eks.end { border-top-right-radius: 999px; border-bottom-right-radius: 999px; }
+.seg { z-index: 1; }
+.eks-note { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.eks-note .sw { width: 18px; height: 9px; }
+.eks-list { display: flex; flex-direction: column; gap: 8px; }
+.eks-row { display: grid; grid-template-columns: 110px auto 110px minmax(0, 1fr) 70px auto; gap: 6px 8px; align-items: center; }
+.eks-row .inp { height: 40px; font-size: 13.5px; }
+.eks-row .sep { color: var(--muted); }
+.eks-row .len { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+.eks-row .err { grid-column: 1 / -1; }
+@media (max-width: 560px) { .eks-row { grid-template-columns: 1fr auto 1fr auto; } .eks-row [data-ek] { grid-column: 1 / -2; } .eks-row .len { display: none; } }
+.eks-empty { font-size: 13px; color: var(--muted); padding: 4px 0; }
 
 .ruas-list { display: flex; flex-direction: column; gap: 18px; }
 .ruas { border: 1px solid var(--line); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
@@ -476,6 +493,12 @@ svg.gbtn { width: 16px; height: 16px; flex: none; }
         <label class="field"><span>D.I.</span><select id="rDi"></select></label>
         <label class="field span2"><span>Keterangan (opsional)</span><input id="rKet" autocomplete="off" placeholder="mis. Mandor: Rizqan"></label>
       </div>
+      <div class="field" id="rEksField"><span>Eksisting</span>
+        <small class="hint">Bagian saluran yang sudah ada dan tidak perlu dikerjakan. Panjangnya dikeluarkan dari 100% untuk semua jenis pekerjaan di ruas ini. Satu ruas bisa punya beberapa lokasi eksisting.</small>
+        <div class="eks-list" id="rEks"></div>
+        <div><button type="button" class="btn btn-xs" id="btnAddEks"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>Tambah eksisting</button></div>
+        <small class="hint" id="rEksOff" hidden>Fitur eksisting belum aktif di database. Admin perlu menjalankan SQL migrasi <code>migrasi/2026-10-14-eksisting.sql</code> di Supabase.</small>
+      </div>
       <div class="field"><span>Jenis pekerjaan di ruas ini</span>
         <small class="hint">Centang jenis pekerjaan yang ada. Setiap jenis punya rentang STA sendiri sebagai 0% dan 100%.</small>
         <div class="jpick" id="rJenis"></div>
@@ -708,31 +731,60 @@ const CONFIG = {
     if (cur) tot += cur[1] - cur[0];
     return tot;
   }
-  function blockCalc(block, jd) {
+  // ----- interval helpers (eksisting dikeluarkan dari target) -----
+  function mergeIv(iv) {
+    const out = [];
+    iv.filter(([p, q]) => isFinite(p) && isFinite(q) && q > p).sort((x, y) => x[0] - y[0]).forEach(([p, q]) => {
+      const l = out[out.length - 1];
+      if (l && p <= l[1]) l[1] = Math.max(l[1], q); else out.push([p, q]);
+    });
+    return out;
+  }
+  const ivLen = (iv) => iv.reduce((t, [p, q]) => t + (q - p), 0);
+  function subtractIv(A, B) {
+    const out = [];
+    for (const [p, q] of A) {
+      let cur = p;
+      for (const [x, y] of B) {
+        if (y <= cur || x >= q) continue;
+        if (x > cur) out.push([cur, Math.min(x, q)]);
+        cur = Math.max(cur, y);
+        if (cur >= q) break;
+      }
+      if (cur < q) out.push([cur, q]);
+    }
+    return out;
+  }
+  const clipIv = (list, a, b) => (list || []).map((x) => [Math.max(+x.dari, a), Math.min(+x.sampai, b)]);
+  function blockCalc(block, jd, eks) {
     const a = +block.staAwal || 0, b = +block.staAkhir || 0, L = Math.max(0, b - a);
+    const E = mergeIv(clipIv(eks, a, b)), EL = ivLen(E), T = Math.max(0, L - EL);
+    const part = (segs, st) => ivLen(subtractIv(mergeIv(clipIv((segs || []).filter((x) => x.status === st), a, b)), E));
     const items = jd.items.map((it) => {
       const segs = (block.items && block.items[it.id]) || [];
-      const done = merged(segs, a, b, "selesai"), prog = merged(segs, a, b, "proses");
-      return { it, segs, done, prog, pct: L ? (done / L) * 100 : 0, pctProg: L ? (prog / L) * 100 : 0 };
+      const done = part(segs, "selesai"), prog = part(segs, "proses");
+      return { it, segs, done, prog, pct: T ? (done / T) * 100 : L ? 100 : 0, pctProg: T ? (prog / T) * 100 : 0 };
     });
-    return { a, b, L, items, kum: mean(items.map((x) => x.pct)) };
+    return { a, b, L, EL, T, eks: eks || [], items, kum: mean(items.map((x) => x.pct)) };
   }
+  const eksLabel = (c) => (c.EL > 0 ? ` · eksisting ${fmtLen(c.EL)} · target ${fmtLen(c.T)}` : "");
   const jenisOf = (r) => S.master.filter((j) => r.jenis && r.jenis[j.id]);
   function rollup(list) {
     return S.master.map((j) => {
-      const ks = list.filter((r) => r.jenis && r.jenis[j.id]).map((r) => blockCalc(r.jenis[j.id], j).kum);
+      const ks = list.filter((r) => r.jenis && r.jenis[j.id]).map((r) => blockCalc(r.jenis[j.id], j, r.eksisting).kum);
       return { j, n: ks.length, avg: mean(ks) };
     });
   }
   function overall(list) {
     const ks = [];
-    list.forEach((r) => jenisOf(r).forEach((j) => ks.push(blockCalc(r.jenis[j.id], j).kum)));
+    list.forEach((r) => jenisOf(r).forEach((j) => ks.push(blockCalc(r.jenis[j.id], j, r.eksisting).kum)));
     return ks.length ? mean(ks) : null;
   }
 
   /* ---------- State ---------- */
   const S = { paket: [], kab: [], di: [], ruas: [], master: DEFAULT_MASTER, judul: "", selPaket: null, selDi: null, q: "", mode: "loading", canWrite: true, loaded: new Set() };
   let sb = null;
+  S.hasEks = true;
   S.user = null; S.role = null; S.canWrite = false;
   try { S.selPaket = localStorage.getItem("sm2-paket"); S.selDi = localStorage.getItem("sm2-di"); } catch {}
   const remember = () => { try { localStorage.setItem("sm2-paket", S.selPaket || ""); localStorage.setItem("sm2-di", S.selDi || ""); } catch {} };
@@ -778,6 +830,16 @@ const CONFIG = {
     });
     return out;
   }
+  function eksHTML(eks, a, L, ruasId) {
+    if (!(L > 0)) return "";
+    return (eks || []).map((e, i) => {
+      const p = Math.max(+e.dari, a), q = Math.min(+e.sampai, a + L);
+      if (!(isFinite(p) && isFinite(q) && q > p)) return "";
+      const left = ((p - a) / L) * 100, w = ((q - p) / L) * 100;
+      const cls = ["eks", left <= 0.01 ? "start" : "", left + w >= 99.99 ? "end" : ""].join(" ");
+      return `<span class="${cls}" style="left:${left}%;width:${w}%" data-ruas="${esc(ruasId)}" data-eks="${i}" tabindex="-1" aria-label="Eksisting STA ${fmtSTA(e.dari)} sampai ${fmtSTA(e.sampai)}"></span>`;
+    }).join("");
+  }
   function rulerHTML(a, L) {
     return [0, 25, 50, 75, 100].map((p) => {
       const pos = p === 0 ? "l" : p === 100 ? "r" : "q";
@@ -810,7 +872,7 @@ const CONFIG = {
     c.items.forEach((x) => {
       const attrs = `data-ruas="${esc(r.id)}" data-jenis="${esc(j.id)}" data-item="${esc(x.it.id)}"`;
       h += `<div class="irow"><div class="lab">${esc(x.it.nama)}</div>
-        <div class="bar"><div class="track" role="img" aria-label="${esc(x.it.nama)}: ${fmtPct(x.pct)} selesai">${segsHTML(x.segs, c.a, c.L, attrs, interactive)}</div></div>
+        <div class="bar"><div class="track" role="img" aria-label="${esc(x.it.nama)}: ${fmtPct(x.pct)} selesai">${segsHTML(x.segs, c.a, c.L, attrs, interactive)}${eksHTML(c.eks, c.a, c.L, r.id)}</div></div>
         <div class="pc">${fmtPct(x.pct)}${x.prog ? `<small>+${fmtPct(x.pctProg)} proses</small>` : ""}</div></div>`;
     });
     h += `<div class="irow rl"><div class="lab"></div><div class="bar"><div class="ruler" aria-hidden="true">${rulerHTML(c.a, c.L)}</div></div><div class="pc"></div></div>`;
@@ -899,7 +961,7 @@ const CONFIG = {
       </div></div>
       <div class="board-head" style="align-items:center">
         <div class="rollup">${dro.length ? dro.map((x) => `<span class="pill">${esc(x.j.nama.replace(/^Pekerjaan\s+/i, ""))} <b>${fmtPct(x.avg)}</b></span>`).join("") : `<span class="pill">${allR.length} kode ruas</span>`}</div>
-        <div class="legend" aria-label="Keterangan"><span><i class="sw done"></i>Selesai</span><span><i class="sw prog"></i>Dalam proses</span><span><i class="sw none"></i>Belum</span><span><i class="sw kum"></i>Kumulatif</span></div>
+        <div class="legend" aria-label="Keterangan"><span><i class="sw done"></i>Selesai</span><span><i class="sw prog"></i>Dalam proses</span><span><i class="sw none"></i>Belum</span><span><i class="sw eks"></i>Eksisting</span><span><i class="sw kum"></i>Kumulatif</span></div>
       </div>`;
     if (!allR.length) h += `<div class="empty"><h3>Belum ada kode ruas</h3><p>Tambahkan kode ruas/trase di D.I. ini, lalu pilih jenis pekerjaannya.</p>${S.canWrite ? `<button type="button" class="btn btn-primary" data-act="add-ruas">${ICON.plus}Tambah kode ruas</button>` : ""}</div>`;
     else if (!list.length) h += `<div class="empty"><h3>Tidak ada yang cocok</h3><p>Tidak ada kode ruas yang cocok dengan “${esc(S.q)}”.</p></div>`;
@@ -908,7 +970,7 @@ const CONFIG = {
       const js = jenisOf(r);
       h += `<article class="ruas" aria-labelledby="rh-${esc(r.id)}">
         <div class="ruas-head">
-          <div class="ruas-id"><div><div class="lbl">Kode ruas</div><h2 id="rh-${esc(r.id)}">${esc(r.kode)}${r.contoh ? '<span class="tag">Contoh</span>' : ""}</h2>${r.ket ? `<p>${esc(r.ket)}</p>` : ""}</div></div>
+          <div class="ruas-id"><div><div class="lbl">Kode ruas</div><h2 id="rh-${esc(r.id)}">${esc(r.kode)}${r.contoh ? '<span class="tag">Contoh</span>' : ""}</h2>${r.ket ? `<p>${esc(r.ket)}</p>` : ""}${(r.eksisting || []).length ? `<p class="eks-note"><i class="sw eks"></i>Eksisting ${r.eksisting.length} lokasi: ${r.eksisting.map((e) => `${fmtSTA(e.dari)}–${fmtSTA(e.sampai)}`).join(", ")} (${fmtLen(ivLen(mergeIv(clipIv(r.eksisting, -Infinity, Infinity))))})</p>` : ""}</div></div>
           <div class="ruas-tools">
             <button type="button" class="btn btn-xs" data-act="edit-ruas" data-id="${esc(r.id)}" data-edit>${ICON.pencil}Ruas &amp; jenis pekerjaan</button>
             <button type="button" class="icon-btn danger" data-act="del-ruas" data-id="${esc(r.id)}" aria-label="Hapus ruas ${esc(r.kode)}" data-edit>${ICON.trash}</button>
@@ -916,11 +978,11 @@ const CONFIG = {
         </div>`;
       if (!js.length) h += `<div class="empty-sm">Belum ada jenis pekerjaan di ruas ini.${S.canWrite ? ` <button type="button" class="btn btn-xs" data-act="edit-ruas" data-id="${esc(r.id)}">${ICON.plus}Pilih jenis pekerjaan</button>` : ""}</div>`;
       for (const j of js) {
-        const c = blockCalc(r.jenis[j.id], j);
+        const c = blockCalc(r.jenis[j.id], j, r.eksisting);
         const empty = !c.items.some((x) => x.segs.length);
         h += `<section class="jblock" aria-label="${esc(j.nama)}">
           <div class="jhead">
-            <div><h3>${esc(j.nama)}</h3><div class="sta mono">STA ${fmtSTA(c.a)} – ${fmtSTA(c.b)} · ${fmtLen(c.L)}</div></div>
+            <div><h3>${esc(j.nama)}</h3><div class="sta mono">STA ${fmtSTA(c.a)} – ${fmtSTA(c.b)} · ${fmtLen(c.L)}${eksLabel(c)}</div></div>
             <div class="r"><div class="kumv"><b>${fmtPct(c.kum)}</b><span>${c.items.length > 1 ? "kumulatif" : "selesai"}</span></div>
               <button type="button" class="btn btn-xs" data-act="edit-jenis" data-id="${esc(r.id)}" data-jenis="${esc(j.id)}" data-edit>${empty ? ICON.plus + "Isi segmen" : ICON.bars + "Edit segmen"}</button></div>
           </div>
@@ -945,6 +1007,12 @@ const CONFIG = {
     return g ? { g, it } : null;
   }
   function showTip(el) {
+    if (el.dataset.eks != null) {
+      const r = el.closest("dialog") ? PV : byId(S.ruas, el.dataset.ruas);
+      const e = r?.eksisting?.[+el.dataset.eks]; if (!e) return hideTip();
+      tip.innerHTML = `<div><b>STA ${fmtSTA(e.dari)} → ${fmtSTA(e.sampai)}</b></div><div>${fmtLen(+e.sampai - +e.dari)} · <span class="st" style="background:var(--eks-bg);color:var(--fg)">Eksisting</span></div>${e.ket ? `<div class="mut">${esc(e.ket)}</div>` : ""}<div class="mut">Tidak dikerjakan, tidak dihitung dalam persen</div>`;
+      return placeTip(el);
+    }
     const f = segFor(el); if (!f) return hideTip();
     const { g, it } = f;
     tip.innerHTML = `<div><b>STA ${fmtSTA(g.dari)} → ${fmtSTA(g.sampai)}</b></div>
@@ -953,6 +1021,9 @@ const CONFIG = {
       ${g.tanggal ? `<div class="mut">${esc(new Date(g.tanggal + "T00:00").toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }))}</div>` : ""}
       ${g.pekerja != null && g.pekerja !== "" ? `<div>${esc(nf.format(+g.pekerja))} pekerja</div>` : ""}
       ${g.catatan ? `<div class="mut">${esc(g.catatan)}</div>` : ""}`;
+    placeTip(el);
+  }
+  function placeTip(el) {
     const r = el.getBoundingClientRect();
     // modal dialogs render in the top layer, so the tooltip must live inside the open dialog to be visible
     const host = el.closest("dialog[open]") || document.body;
@@ -964,8 +1035,8 @@ const CONFIG = {
     tip.style.left = x + "px"; tip.style.top = y + "px";
   }
   const hideTip = () => tip.classList.remove("on");
-  document.addEventListener("pointerover", (e) => { const el = e.target.closest?.("[data-seg]"); el ? showTip(el) : hideTip(); });
-  document.addEventListener("focusin", (e) => { const el = e.target.closest?.("[data-seg]"); el ? showTip(el) : hideTip(); });
+  document.addEventListener("pointerover", (e) => { const el = e.target.closest?.("[data-seg], [data-eks]"); el ? showTip(el) : hideTip(); });
+  document.addEventListener("focusin", (e) => { const el = e.target.closest?.("[data-seg], [data-eks]"); el ? showTip(el) : hideTip(); });
   document.addEventListener("scroll", hideTip, true);
 
   /* ---------- Writes ---------- */
@@ -985,8 +1056,8 @@ const CONFIG = {
     paket: { table: "paket", key: "paket", to: (b) => ({ nama: b.nama, urut: b.order ?? 0 }), from: (r) => ({ id: r.id, nama: r.nama, order: r.urut }) },
     kabupaten: { table: "kabupaten", key: "kab", to: (b) => ({ paket_id: b.paketId, nama: b.nama, urut: b.order ?? 0 }), from: (r) => ({ id: r.id, paketId: r.paket_id, nama: r.nama, order: r.urut }) },
     di: { table: "di", key: "di", to: (b) => ({ kab_id: b.kabId, nama: b.nama, urut: b.order ?? 0 }), from: (r) => ({ id: r.id, kabId: r.kab_id, nama: r.nama, order: r.urut }) },
-    ruas: { table: "ruas", key: "ruas", to: (b) => ({ di_id: b.diId, kode: b.kode, ket: b.ket || "", urut: b.order ?? 0, contoh: !!b.contoh, jenis: b.jenis || {} }),
-      from: (r) => ({ id: r.id, diId: r.di_id, kode: r.kode, ket: r.ket || "", order: r.urut, ...(r.contoh ? { contoh: true } : {}), jenis: r.jenis || {} }) },
+    ruas: { table: "ruas", key: "ruas", to: (b) => ({ di_id: b.diId, kode: b.kode, ket: b.ket || "", urut: b.order ?? 0, contoh: !!b.contoh, jenis: b.jenis || {}, ...(S.hasEks ? { eksisting: b.eksisting || [] } : {}) }),
+      from: (r) => ({ id: r.id, diId: r.di_id, kode: r.kode, ket: r.ket || "", order: r.urut, ...(r.contoh ? { contoh: true } : {}), jenis: r.jenis || {}, eksisting: Array.isArray(r.eksisting) ? r.eksisting : [] }) },
   };
   async function sbq(p) {
     const { data, error } = await p;
@@ -1167,8 +1238,47 @@ const CONFIG = {
           <label class="field"><span>STA akhir (100%)</span><input class="mono" data-jb inputmode="decimal" autocomplete="off" value="${b ? fmtSTA(b.staAkhir) : ""}" placeholder="mis. 1+200"><small class="err" data-je></small></label>
         </div></div>`;
     }).join("");
+    draftR.eksRows = (draftR.eksisting || []).map((e) => ({ id: e.id || rid(), dTxt: fmtSTA(e.dari), sTxt: fmtSTA(e.sampai), ket: e.ket || "" }));
+    renderEks();
+    $("#rEks").hidden = $("#btnAddEks").parentElement.hidden = !S.hasEks; $("#rEksOff").hidden = S.hasEks;
     dlgRuas.showModal(); markClean(dlgRuas); $("#rKode").focus();
   }
+  function renderEks() {
+    const rows = draftR.eksRows;
+    $("#rEks").innerHTML = rows.length ? rows.map((e, i) => `<div class="eks-row" data-k="${i}">
+        <input class="inp mono" data-ed value="${esc(e.dTxt)}" inputmode="decimal" autocomplete="off" placeholder="Dari 0+200" aria-label="Eksisting ${i + 1}, dari STA">
+        <span class="sep">–</span>
+        <input class="inp mono" data-es value="${esc(e.sTxt)}" inputmode="decimal" autocomplete="off" placeholder="Sampai 0+350" aria-label="Eksisting ${i + 1}, sampai STA">
+        <input class="inp" data-ek value="${esc(e.ket)}" autocomplete="off" placeholder="Keterangan (opsional)" aria-label="Eksisting ${i + 1}, keterangan">
+        <span class="len" data-el></span>
+        <button type="button" class="icon-btn danger" data-edel aria-label="Hapus eksisting ${i + 1}">${ICON.trash}</button>
+        <small class="err" data-eerr></small>
+      </div>`).join("") : `<div class="eks-empty">Tidak ada eksisting di ruas ini.</div>`;
+    rows.forEach((_, i) => eksLen(i));
+  }
+  function eksLen(i) {
+    const e = draftR.eksRows[i], el = $(`#rEks [data-k="${i}"] [data-el]`); if (!el) return;
+    const a = parseSTA(e.dTxt), b = parseSTA(e.sTxt);
+    el.textContent = isFinite(a) && isFinite(b) && b > a ? fmtLen(b - a) : "";
+  }
+  $("#rEks").addEventListener("input", (e) => {
+    const row = e.target.closest("[data-k]"); if (!row) return; const i = +row.dataset.k, d = draftR.eksRows[i];
+    if (e.target.matches("[data-ed]")) d.dTxt = e.target.value;
+    if (e.target.matches("[data-es]")) d.sTxt = e.target.value;
+    if (e.target.matches("[data-ek]")) d.ket = e.target.value;
+    eksLen(i);
+  });
+  $("#rEks").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-edel]"); if (!b) return;
+    const i = +b.closest("[data-k]").dataset.k; draftR.eksRows.splice(i, 1); renderEks();
+    ($(`#rEks [data-k="${Math.min(i, draftR.eksRows.length - 1)}"] [data-ed]`) || $("#btnAddEks")).focus();
+  });
+  $("#btnAddEks").addEventListener("click", () => {
+    const last = draftR.eksRows[draftR.eksRows.length - 1];
+    const from = last && isFinite(parseSTA(last.sTxt)) ? fmtSTA(parseSTA(last.sTxt)) : "";
+    draftR.eksRows.push({ id: rid(), dTxt: from, sTxt: "", ket: "" }); renderEks();
+    const r = $(`#rEks [data-k="${draftR.eksRows.length - 1}"]`); r.querySelector(from ? "[data-es]" : "[data-ed]").focus();
+  });
   $("#rJenis").addEventListener("change", (e) => {
     if (!e.target.matches("[data-jc]")) return;
     const box = e.target.closest(".jpick-item"); const g = box.querySelector(".grid2"); g.hidden = !e.target.checked;
@@ -1194,6 +1304,20 @@ const CONFIG = {
       if (b <= a) { bad(ib, "STA akhir harus lebih besar dari STA awal."); continue; }
       jenis[jid] = { staAwal: a, staAkhir: b, items: prev?.items || {} };
     }
+    // eksisting
+    const eksisting = [];
+    draftR.eksRows.forEach((d, i) => {
+      const row = $(`#rEks [data-k="${i}"]`); const ia = row.querySelector("[data-ed]"), ib = row.querySelector("[data-es]"), er = row.querySelector("[data-eerr]");
+      ia.removeAttribute("aria-invalid"); ib.removeAttribute("aria-invalid"); er.textContent = "";
+      if (!d.dTxt.trim() && !d.sTxt.trim()) return; // baris kosong diabaikan
+      const a = parseSTA(d.dTxt), b = parseSTA(d.sTxt);
+      const bad = (el, msg) => { el.setAttribute("aria-invalid", "true"); er.textContent = msg; firstBad ||= el; };
+      if (!isFinite(a)) return bad(ia, "STA awal eksisting tidak terbaca. Contoh: 0+200.");
+      if (!isFinite(b)) return bad(ib, "STA akhir eksisting tidak terbaca. Contoh: 0+350.");
+      if (b <= a) return bad(ib, "STA akhir harus lebih besar dari STA awal.");
+      eksisting.push({ id: d.id, dari: a, sampai: b, ket: d.ket.trim() });
+    });
+    eksisting.sort((x, y) => x.dari - y.dari);
     // keep blocks for jenis not in the current master untouched
     Object.keys(draftR.jenis || {}).forEach((jid) => { if (!S.master.some((j) => j.id === jid)) jenis[jid] = draftR.jenis[jid]; });
     if (firstBad) { firstBad.focus(); return; }
@@ -1201,9 +1325,10 @@ const CONFIG = {
     if (dropped.length) { if (!(await confirmBox("Simpan dan hapus jenis pekerjaan?", `Segmen pada ${dropped.join(", ")} di ruas ini akan ikut terhapus.`, "Simpan & hapus", { no: "Kembali" }))) return; }
     else {
       const jn = S.master.filter((j) => jenis[j.id]).map((j) => j.nama.replace(/^Pekerjaan\s+/i, ""));
-      if (!(await confirmSave(draftR.isNew ? "Tambah kode ruas?" : "Simpan perubahan kode ruas?", `Ruas “${kode}”${jn.length ? ` dengan jenis pekerjaan: ${jn.join(", ")}` : " tanpa jenis pekerjaan"} akan disimpan.`))) return;
+      const eksTxt = eksisting.length ? ` Eksisting ${eksisting.length} lokasi (${fmtLen(ivLen(mergeIv(clipIv(eksisting, -Infinity, Infinity))))}) dikeluarkan dari target.` : "";
+      if (!(await confirmSave(draftR.isNew ? "Tambah kode ruas?" : "Simpan perubahan kode ruas?", `Ruas “${kode}”${jn.length ? ` dengan jenis pekerjaan: ${jn.join(", ")}` : " tanpa jenis pekerjaan"} akan disimpan.${eksTxt}`))) return;
     }
-    const body = { diId: $("#rDi").value, kode, ket: $("#rKet").value.trim(), order: draftR.order ?? Date.now(), jenis };
+    const body = { diId: $("#rDi").value, kode, ket: $("#rKet").value.trim(), order: draftR.order ?? Date.now(), jenis, eksisting: S.hasEks ? eksisting : (draftR.eksisting || []) };
     if (draftR.wasContoh && $("#rContoh").checked) body.contoh = true;
     const btn = $("#btnSaveRuas"); btn.disabled = true;
     const ok = await write(() => putDoc("ruas", draftR.id, body));
@@ -1310,11 +1435,12 @@ const CONFIG = {
   }
   function updateJPreview() {
     const j = jDef(), b = draftBlock();
-    PV = { id: draftJ.ruasId, jenis: { [j.id]: b } };
+    const rr = byId(S.ruas, draftJ.ruasId);
+    PV = { id: draftJ.ruasId, eksisting: rr?.eksisting || [], jenis: { [j.id]: b } };
     if (!(isFinite(b.staAwal) && isFinite(b.staAkhir) && b.staAkhir > b.staAwal)) { $("#jPv").innerHTML = `<div class="empty-sm">Isi STA awal dan akhir untuk melihat pratinjau.</div>`; $("#jPvStat").textContent = ""; return; }
-    const c = blockCalc(b, j);
+    const c = blockCalc(b, j, PV.eksisting);
     $("#jPv").innerHTML = crewHTML(c) + itemsHTML(PV, j, c, false);
-    $("#jPvStat").textContent = `${c.items.length > 1 ? "Kumulatif" : "Selesai"} ${fmtPct(c.kum)} · ${fmtLen(c.L)}`;
+    $("#jPvStat").textContent = `${c.items.length > 1 ? "Kumulatif" : "Selesai"} ${fmtPct(c.kum)} · ${fmtLen(c.L)}${eksLabel(c)}`;
   }
   $("#jAwal").addEventListener("input", (e) => { draftJ.awalTxt = e.target.value; updateJPreview(); });
   $("#jAkhir").addEventListener("input", (e) => { draftJ.akhirTxt = e.target.value; updateJPreview(); });
@@ -1534,6 +1660,16 @@ const CONFIG = {
     const today = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
     let y = 0, page = 1;
     const LW = 58 * k, PW = 22 * k, BX = M + LW, BW = W - M - PW - BX, RH = 6.2 * k, BH = 3 * k;
+    function eksPdf(x, yy, w, h) {
+      doc.setFillColor(205, 214, 225); doc.rect(x, yy, w, h, "F");
+      doc.setDrawColor(111, 130, 153); doc.setLineWidth(0.25);
+      for (let t = x - h; t < x + w; t += 1.1) {
+        let x1 = t, y1 = yy + h, x2 = t + h, y2 = yy;
+        if (x1 < x) { y1 -= x - x1; x1 = x; }
+        if (x2 > x + w) { y2 += x2 - (x + w); x2 = x + w; }
+        if (x2 > x1) doc.line(x1, y1, x2, y2);
+      }
+    }
     function hatch(x, yy, w, h) {
       doc.setFillColor(...SOFT); doc.rect(x, yy, w, h, "F");
       doc.setDrawColor(...SEG); doc.setLineWidth(0.45);
@@ -1559,6 +1695,7 @@ const CONFIG = {
       hatch(M + 24, fy - 2.4, 6, 2.6); doc.text("Dalam proses", M + 32, fy);
       doc.setFillColor(...TRK); doc.rect(M + 56, fy - 2.4, 6, 2.6, "F"); doc.text("Belum", M + 64, fy);
       doc.setFillColor(...KUM); doc.rect(M + 76, fy - 2.4, 6, 2.6, "F"); doc.text("Kumulatif (rata-rata item)", M + 84, fy);
+      eksPdf(M + 122, fy - 2.4, 6, 2.6); doc.setTextColor(...MUT); doc.text("Eksisting (tidak dihitung)", M + 130, fy);
       doc.text("Halaman " + page, W - M, fy, { align: "right" });
     };
     const ensure = (h) => { if (y + h > H - 12) { foot(); doc.addPage(); page++; head(false); } };
@@ -1579,7 +1716,7 @@ const CONFIG = {
           if (!js.length) { ensure(8 * k); doc.setFont("helvetica", "bold"); doc.setFontSize(9.5 * k); doc.setTextColor(...INK); doc.text(`Ruas ${r.kode} — belum ada jenis pekerjaan`, M + 3, y); y += 7 * k; continue; }
           for (const j of js) {
             any = true;
-            const c = blockCalc(r.jenis[j.id], j);
+            const c = blockCalc(r.jenis[j.id], j, r.eksisting);
             const w = latestCrew(c), crewH = w ? 4.2 * k : 0;
             const n = c.items.length, blockH = 9 * k + crewH + n * RH + 4.5 * k + (n > 1 ? RH + 1.5 : 0) + 6;
             ensure(blockH);
@@ -1588,7 +1725,7 @@ const CONFIG = {
             doc.text(`Ruas ${r.kode}  ·  ${j.nama.toUpperCase()}`, M + 3, y + 0.5);
             doc.text(`${fmtPct(c.kum)} ${n > 1 ? "kumulatif" : "selesai"}`, W - M - 3, y + 0.5, { align: "right" });
             doc.setFont("helvetica", "normal"); doc.setFontSize(7.5 * k); doc.setTextColor(...MUT);
-            doc.text(`STA ${fmtSTA(c.a)} – ${fmtSTA(c.b)} · ${fmtLen(c.L)}${r.ket ? " · " + r.ket : ""}`, M + 3, y + 4.2 * k);
+            doc.text(`STA ${fmtSTA(c.a)} – ${fmtSTA(c.b)} · ${fmtLen(c.L)}${eksLabel(c)}${r.ket ? " · " + r.ket : ""}`, M + 3, y + 4.2 * k);
             if (w) {
               const dt = new Date(w.tgl + "T00:00").toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
               const br = Object.entries(w.per);
@@ -1614,7 +1751,11 @@ const CONFIG = {
                 if (g.status === "proses") hatch(sx, y, sw, BH);
                 else { doc.setFillColor(...SEG); doc.rect(sx, y, sw, BH, "F"); doc.setDrawColor(...EDGE); doc.setLineWidth(0.2); doc.line(sx, y, sx, y + BH); doc.line(sx + sw, y, sx + sw, y + BH); }
               });
-              doc.setFont("helvetica", "bold"); doc.setFontSize(8.5 * k); doc.text(fmtPct(x.pct), W - M - 3, y + BH - 0.3, { align: "right" });
+              c.eks.forEach((e) => {
+                const p = Math.max(+e.dari, c.a), q = Math.min(+e.sampai, c.b); if (!(q > p) || !c.L) return;
+                eksPdf(BX + ((p - c.a) / c.L) * BW, y, Math.max(0.4, ((q - p) / c.L) * BW), BH);
+              });
+              doc.setFont("helvetica", "bold"); doc.setFontSize(8.5 * k); doc.setTextColor(...INK); doc.text(fmtPct(x.pct), W - M - 3, y + BH - 0.3, { align: "right" });
               y += RH;
             }
             doc.setFontSize(6.3 * k);
@@ -1738,6 +1879,8 @@ const CONFIG = {
     S.master = Array.isArray(v?.master) && v.master.length ? clone(v.master) : DEFAULT_MASTER;
   }
   async function loadAll() {
+    // kolom "eksisting" baru ada setelah migrasi SQL 2026-10-14; tanpa kolom itu, fitur eksisting dinonaktifkan agar penyimpanan tetap aman
+    sb.from("ruas").select("eksisting").limit(1).then(({ error }) => { S.hasEks = !error; render(); });
     const [p, k, d, r, c] = await Promise.all([
       sbq(sb.from("paket").select("*")), sbq(sb.from("kabupaten").select("*")), sbq(sb.from("di").select("*")),
       sbq(sb.from("ruas").select("*")), sbq(sb.from("config").select("*").eq("id", 1).maybeSingle()),
@@ -1773,4 +1916,4 @@ const CONFIG = {
 </script>
 </body>
 </html>
-<!-- kontinù build 2026-10-13 · konfirmasi tutup/simpan, tabel segmen bisa diperbesar, detail segmen di pratinjau -->
+<!-- kontinù build 2026-10-14 · panjang STA eksisting per kode ruas -->

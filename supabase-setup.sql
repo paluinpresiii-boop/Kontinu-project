@@ -38,8 +38,11 @@ create table if not exists public.ruas (
   urut double precision not null default 0,
   contoh boolean not null default false,
   jenis jsonb not null default '{}'::jsonb,
+  eksisting jsonb not null default '[]'::jsonb,
   updated_at timestamptz not null default now()
 );
+-- untuk database yang dibuat sebelum 2026-10-14
+alter table public.ruas add column if not exists eksisting jsonb not null default '[]'::jsonb;
 
 -- Pengaturan proyek (selalu satu baris, id = 1): nama proyek + daftar jenis & item pekerjaan
 create table if not exists public.config (
