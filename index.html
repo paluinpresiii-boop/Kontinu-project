@@ -202,6 +202,14 @@ h1.title { margin: 0; font-size: clamp(26px, 3.4vw, 38px); font-weight: 800; let
 .eks-row .err { grid-column: 1 / -1; }
 @media (max-width: 560px) { .eks-row { grid-template-columns: 1fr auto 1fr auto; } .eks-row [data-ek] { grid-column: 1 / -2; } .eks-row .len { display: none; } }
 .eks-empty { font-size: 13px; color: var(--muted); padding: 4px 0; }
+.eks-box { border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; }
+.eks-box > summary { cursor: pointer; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; list-style: none; min-height: 28px; }
+.eks-box > summary::-webkit-details-marker { display: none; }
+.eks-box > summary::after { content: ""; margin-left: auto; width: 8px; height: 8px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .15s; }
+.eks-box[open] > summary::after { transform: rotate(-135deg); }
+.eks-box > summary .hint { font-weight: 500; }
+.eks-box[open] > summary { margin-bottom: 8px; }
+.eks-box .eks-body { display: flex; flex-direction: column; gap: 10px; }
 
 .ruas-list { display: flex; flex-direction: column; gap: 18px; }
 .ruas { border: 1px solid var(--line); border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
@@ -457,6 +465,15 @@ svg.gbtn { width: 16px; height: 16px; flex: none; }
         <label class="field"><span>STA awal (0%)</span><input id="jAwal" class="mono" inputmode="decimal" autocomplete="off" placeholder="0+000"><small class="hint">Tulis 1+250 atau dalam meter: 1250</small></label>
         <label class="field"><span>STA akhir (100%)</span><input id="jAkhir" class="mono" inputmode="decimal" autocomplete="off" placeholder="1+000"><small class="err" id="jRangeErr"></small></label>
       </div>
+      <details class="eks-box" id="jEksBox" open>
+        <summary><i class="sw eks" aria-hidden="true"></i>Eksisting ruas ini <span class="hint" id="jEksSum"></span></summary>
+        <div class="eks-body" id="jEksBody">
+          <small class="hint">Bagian saluran yang sudah ada dan tidak perlu dikerjakan. Berlaku untuk <b>semua jenis pekerjaan</b> di ruas ini, dan panjangnya dikeluarkan dari 100%.</small>
+          <div class="eks-list" id="jEks"></div>
+          <div><button type="button" class="btn btn-xs" id="btnAddEksJ"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>Tambah eksisting</button></div>
+        </div>
+        <small class="hint" id="jEksOff" hidden>Fitur eksisting belum aktif di database. Admin perlu menjalankan SQL migrasi <code>migrasi/2026-10-14-eksisting.sql</code> di Supabase.</small>
+      </details>
       <div class="preview" aria-label="Pratinjau stripmap">
         <div class="cap"><span>Pratinjau · arahkan kursor ke segmen untuk detail, klik untuk membuka barisnya</span><span id="jPvStat"></span></div>
         <div id="jPv"></div>
@@ -1238,47 +1255,75 @@ const CONFIG = {
           <label class="field"><span>STA akhir (100%)</span><input class="mono" data-jb inputmode="decimal" autocomplete="off" value="${b ? fmtSTA(b.staAkhir) : ""}" placeholder="mis. 1+200"><small class="err" data-je></small></label>
         </div></div>`;
     }).join("");
-    draftR.eksRows = (draftR.eksisting || []).map((e) => ({ id: e.id || rid(), dTxt: fmtSTA(e.dari), sTxt: fmtSTA(e.sampai), ket: e.ket || "" }));
-    renderEks();
+    draftR.eksRows = toEksRows(draftR.eksisting);
+    eksR.render();
     $("#rEks").hidden = $("#btnAddEks").parentElement.hidden = !S.hasEks; $("#rEksOff").hidden = S.hasEks;
     dlgRuas.showModal(); markClean(dlgRuas); $("#rKode").focus();
   }
-  function renderEks() {
-    const rows = draftR.eksRows;
-    $("#rEks").innerHTML = rows.length ? rows.map((e, i) => `<div class="eks-row" data-k="${i}">
-        <input class="inp mono" data-ed value="${esc(e.dTxt)}" inputmode="decimal" autocomplete="off" placeholder="Dari 0+200" aria-label="Eksisting ${i + 1}, dari STA">
-        <span class="sep">–</span>
-        <input class="inp mono" data-es value="${esc(e.sTxt)}" inputmode="decimal" autocomplete="off" placeholder="Sampai 0+350" aria-label="Eksisting ${i + 1}, sampai STA">
-        <input class="inp" data-ek value="${esc(e.ket)}" autocomplete="off" placeholder="Keterangan (opsional)" aria-label="Eksisting ${i + 1}, keterangan">
-        <span class="len" data-el></span>
-        <button type="button" class="icon-btn danger" data-edel aria-label="Hapus eksisting ${i + 1}">${ICON.trash}</button>
-        <small class="err" data-eerr></small>
-      </div>`).join("") : `<div class="eks-empty">Tidak ada eksisting di ruas ini.</div>`;
-    rows.forEach((_, i) => eksLen(i));
+  // ----- Editor daftar eksisting (dipakai di jendela ruas dan di Edit segmen) -----
+  const toEksRows = (list) => (list || []).map((e) => ({ id: e.id || rid(), dTxt: fmtSTA(e.dari), sTxt: fmtSTA(e.sampai), ket: e.ket || "" }));
+  const eksTotal = (list) => ivLen(mergeIv(clipIv(list, -Infinity, Infinity)));
+  function eksEditor(listEl, addBtn, getRows, onChange = () => {}) {
+    const row = (i) => listEl.querySelector(`[data-k="${i}"]`);
+    const lenOf = (i) => {
+      const e = getRows()[i], el = row(i)?.querySelector("[data-el]"); if (!el) return;
+      const a = parseSTA(e.dTxt), b = parseSTA(e.sTxt);
+      el.textContent = isFinite(a) && isFinite(b) && b > a ? fmtLen(b - a) : "";
+    };
+    const render = () => {
+      const rows = getRows();
+      listEl.innerHTML = rows.length ? rows.map((e, i) => `<div class="eks-row" data-k="${i}">
+          <input class="inp mono" data-ed value="${esc(e.dTxt)}" inputmode="decimal" autocomplete="off" placeholder="Dari 0+200" aria-label="Eksisting ${i + 1}, dari STA">
+          <span class="sep">–</span>
+          <input class="inp mono" data-es value="${esc(e.sTxt)}" inputmode="decimal" autocomplete="off" placeholder="Sampai 0+350" aria-label="Eksisting ${i + 1}, sampai STA">
+          <input class="inp" data-ek value="${esc(e.ket)}" autocomplete="off" placeholder="Keterangan (opsional)" aria-label="Eksisting ${i + 1}, keterangan">
+          <span class="len" data-el></span>
+          <button type="button" class="icon-btn danger" data-edel aria-label="Hapus eksisting ${i + 1}">${ICON.trash}</button>
+          <small class="err" data-eerr></small>
+        </div>`).join("") : `<div class="eks-empty">Tidak ada eksisting di ruas ini.</div>`;
+      rows.forEach((_, i) => lenOf(i));
+    };
+    listEl.addEventListener("input", (e) => {
+      const r = e.target.closest("[data-k]"); if (!r) return; const i = +r.dataset.k, d = getRows()[i];
+      if (e.target.matches("[data-ed]")) d.dTxt = e.target.value;
+      if (e.target.matches("[data-es]")) d.sTxt = e.target.value;
+      if (e.target.matches("[data-ek]")) d.ket = e.target.value;
+      lenOf(i); onChange();
+    });
+    listEl.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-edel]"); if (!b) return;
+      const rows = getRows(), i = +b.closest("[data-k]").dataset.k; rows.splice(i, 1); render(); onChange();
+      (row(Math.min(i, rows.length - 1))?.querySelector("[data-ed]") || addBtn).focus();
+    });
+    addBtn.addEventListener("click", () => {
+      const rows = getRows(), last = rows[rows.length - 1];
+      const from = last && isFinite(parseSTA(last.sTxt)) ? fmtSTA(parseSTA(last.sTxt)) : "";
+      rows.push({ id: rid(), dTxt: from, sTxt: "", ket: "" }); render(); onChange();
+      row(rows.length - 1).querySelector(from ? "[data-es]" : "[data-ed]").focus();
+    });
+    // rentang valid saja (untuk pratinjau)
+    const parsed = () => getRows().map((d) => ({ id: d.id, dari: parseSTA(d.dTxt), sampai: parseSTA(d.sTxt), ket: d.ket.trim() }))
+      .filter((e) => isFinite(e.dari) && isFinite(e.sampai) && e.sampai > e.dari).sort((x, y) => x.dari - y.dari);
+    // validasi + kumpulkan untuk disimpan
+    const collect = () => {
+      let firstBad = null; const list = [];
+      getRows().forEach((d, i) => {
+        const r = row(i); const ia = r.querySelector("[data-ed]"), ib = r.querySelector("[data-es]"), er = r.querySelector("[data-eerr]");
+        ia.removeAttribute("aria-invalid"); ib.removeAttribute("aria-invalid"); er.textContent = "";
+        if (!d.dTxt.trim() && !d.sTxt.trim()) return; // baris kosong diabaikan
+        const a = parseSTA(d.dTxt), b = parseSTA(d.sTxt);
+        const bad = (el, msg) => { el.setAttribute("aria-invalid", "true"); er.textContent = msg; firstBad ||= el; };
+        if (!isFinite(a)) return bad(ia, "STA awal eksisting tidak terbaca. Contoh: 0+200.");
+        if (!isFinite(b)) return bad(ib, "STA akhir eksisting tidak terbaca. Contoh: 0+350.");
+        if (b <= a) return bad(ib, "STA akhir harus lebih besar dari STA awal.");
+        list.push({ id: d.id, dari: a, sampai: b, ket: d.ket.trim() });
+      });
+      list.sort((x, y) => x.dari - y.dari);
+      return { list, firstBad };
+    };
+    return { render, parsed, collect };
   }
-  function eksLen(i) {
-    const e = draftR.eksRows[i], el = $(`#rEks [data-k="${i}"] [data-el]`); if (!el) return;
-    const a = parseSTA(e.dTxt), b = parseSTA(e.sTxt);
-    el.textContent = isFinite(a) && isFinite(b) && b > a ? fmtLen(b - a) : "";
-  }
-  $("#rEks").addEventListener("input", (e) => {
-    const row = e.target.closest("[data-k]"); if (!row) return; const i = +row.dataset.k, d = draftR.eksRows[i];
-    if (e.target.matches("[data-ed]")) d.dTxt = e.target.value;
-    if (e.target.matches("[data-es]")) d.sTxt = e.target.value;
-    if (e.target.matches("[data-ek]")) d.ket = e.target.value;
-    eksLen(i);
-  });
-  $("#rEks").addEventListener("click", (e) => {
-    const b = e.target.closest("[data-edel]"); if (!b) return;
-    const i = +b.closest("[data-k]").dataset.k; draftR.eksRows.splice(i, 1); renderEks();
-    ($(`#rEks [data-k="${Math.min(i, draftR.eksRows.length - 1)}"] [data-ed]`) || $("#btnAddEks")).focus();
-  });
-  $("#btnAddEks").addEventListener("click", () => {
-    const last = draftR.eksRows[draftR.eksRows.length - 1];
-    const from = last && isFinite(parseSTA(last.sTxt)) ? fmtSTA(parseSTA(last.sTxt)) : "";
-    draftR.eksRows.push({ id: rid(), dTxt: from, sTxt: "", ket: "" }); renderEks();
-    const r = $(`#rEks [data-k="${draftR.eksRows.length - 1}"]`); r.querySelector(from ? "[data-es]" : "[data-ed]").focus();
-  });
+  const eksR = eksEditor($("#rEks"), $("#btnAddEks"), () => draftR.eksRows);
   $("#rJenis").addEventListener("change", (e) => {
     if (!e.target.matches("[data-jc]")) return;
     const box = e.target.closest(".jpick-item"); const g = box.querySelector(".grid2"); g.hidden = !e.target.checked;
@@ -1305,19 +1350,8 @@ const CONFIG = {
       jenis[jid] = { staAwal: a, staAkhir: b, items: prev?.items || {} };
     }
     // eksisting
-    const eksisting = [];
-    draftR.eksRows.forEach((d, i) => {
-      const row = $(`#rEks [data-k="${i}"]`); const ia = row.querySelector("[data-ed]"), ib = row.querySelector("[data-es]"), er = row.querySelector("[data-eerr]");
-      ia.removeAttribute("aria-invalid"); ib.removeAttribute("aria-invalid"); er.textContent = "";
-      if (!d.dTxt.trim() && !d.sTxt.trim()) return; // baris kosong diabaikan
-      const a = parseSTA(d.dTxt), b = parseSTA(d.sTxt);
-      const bad = (el, msg) => { el.setAttribute("aria-invalid", "true"); er.textContent = msg; firstBad ||= el; };
-      if (!isFinite(a)) return bad(ia, "STA awal eksisting tidak terbaca. Contoh: 0+200.");
-      if (!isFinite(b)) return bad(ib, "STA akhir eksisting tidak terbaca. Contoh: 0+350.");
-      if (b <= a) return bad(ib, "STA akhir harus lebih besar dari STA awal.");
-      eksisting.push({ id: d.id, dari: a, sampai: b, ket: d.ket.trim() });
-    });
-    eksisting.sort((x, y) => x.dari - y.dari);
+    const ekR = eksR.collect(); firstBad ||= ekR.firstBad;
+    const eksisting = ekR.list;
     // keep blocks for jenis not in the current master untouched
     Object.keys(draftR.jenis || {}).forEach((jid) => { if (!S.master.some((j) => j.id === jid)) jenis[jid] = draftR.jenis[jid]; });
     if (firstBad) { firstBad.focus(); return; }
@@ -1325,7 +1359,7 @@ const CONFIG = {
     if (dropped.length) { if (!(await confirmBox("Simpan dan hapus jenis pekerjaan?", `Segmen pada ${dropped.join(", ")} di ruas ini akan ikut terhapus.`, "Simpan & hapus", { no: "Kembali" }))) return; }
     else {
       const jn = S.master.filter((j) => jenis[j.id]).map((j) => j.nama.replace(/^Pekerjaan\s+/i, ""));
-      const eksTxt = eksisting.length ? ` Eksisting ${eksisting.length} lokasi (${fmtLen(ivLen(mergeIv(clipIv(eksisting, -Infinity, Infinity))))}) dikeluarkan dari target.` : "";
+      const eksTxt = eksisting.length ? ` Eksisting ${eksisting.length} lokasi (${fmtLen(eksTotal(eksisting))}) dikeluarkan dari target.` : "";
       if (!(await confirmSave(draftR.isNew ? "Tambah kode ruas?" : "Simpan perubahan kode ruas?", `Ruas “${kode}”${jn.length ? ` dengan jenis pekerjaan: ${jn.join(", ")}` : " tanpa jenis pekerjaan"} akan disimpan.${eksTxt}`))) return;
     }
     const body = { diId: $("#rDi").value, kode, ket: $("#rKet").value.trim(), order: draftR.order ?? Date.now(), jenis, eksisting: S.hasEks ? eksisting : (draftR.eksisting || []) };
@@ -1357,6 +1391,10 @@ const CONFIG = {
     const itemIdx = (id) => j.items.findIndex((it) => it.id === id);
     rows.sort((p, q) => (p.tanggal || "9999") .localeCompare(q.tanggal || "9999") || itemIdx(p.item) - itemIdx(q.item) || parseSTA(p.dariTxt) - parseSTA(q.dariTxt));
     draftJ = { ruasId, jid, awalTxt: fmtSTA(b.staAwal), akhirTxt: fmtSTA(b.staAkhir), rows, filter: "", orig: new Map(rows.map((g) => [g.id, JSON.stringify(g)])), origRange: fmtSTA(b.staAwal) + "|" + fmtSTA(b.staAkhir) };
+    draftJ.eksRows = toEksRows(r.eksisting);
+    draftJ.origEks = JSON.stringify(eksJ.parsed());
+    eksJ.render(); eksSummary();
+    $("#jEksBody").hidden = !S.hasEks; $("#jEksOff").hidden = S.hasEks;
     $("#jFilter").innerHTML = `<option value="">Semua item</option>` + j.items.map((it) => `<option value="${esc(it.id)}">${esc(it.nama)}</option>`).join("");
     $("#jFilter").value = "";
     const D = byId(S.di, r.diId);
@@ -1435,13 +1473,17 @@ const CONFIG = {
   }
   function updateJPreview() {
     const j = jDef(), b = draftBlock();
-    const rr = byId(S.ruas, draftJ.ruasId);
-    PV = { id: draftJ.ruasId, eksisting: rr?.eksisting || [], jenis: { [j.id]: b } };
+    PV = { id: draftJ.ruasId, eksisting: draftJ.eksRows ? eksJ.parsed() : (byId(S.ruas, draftJ.ruasId)?.eksisting || []), jenis: { [j.id]: b } };
     if (!(isFinite(b.staAwal) && isFinite(b.staAkhir) && b.staAkhir > b.staAwal)) { $("#jPv").innerHTML = `<div class="empty-sm">Isi STA awal dan akhir untuk melihat pratinjau.</div>`; $("#jPvStat").textContent = ""; return; }
     const c = blockCalc(b, j, PV.eksisting);
     $("#jPv").innerHTML = crewHTML(c) + itemsHTML(PV, j, c, false);
     $("#jPvStat").textContent = `${c.items.length > 1 ? "Kumulatif" : "Selesai"} ${fmtPct(c.kum)} · ${fmtLen(c.L)}${eksLabel(c)}`;
   }
+  function eksSummary() {
+    const l = eksJ.parsed();
+    $("#jEksSum").textContent = l.length ? `· ${l.length} lokasi · ${fmtLen(eksTotal(l))}` : "· belum ada";
+  }
+  const eksJ = eksEditor($("#jEks"), $("#btnAddEksJ"), () => draftJ.eksRows, () => { eksSummary(); updateJPreview(); });
   $("#jAwal").addEventListener("input", (e) => { draftJ.awalTxt = e.target.value; updateJPreview(); });
   $("#jAkhir").addEventListener("input", (e) => { draftJ.akhirTxt = e.target.value; updateJPreview(); });
   $("#jBody").addEventListener("input", (e) => {
@@ -1503,6 +1545,8 @@ const CONFIG = {
       if (pk !== null && !(Number.isInteger(pk) && pk >= 0)) return bad(ip, ep, "Isi bilangan bulat, mis. 12.");
       (items[g.item] ||= []).push({ id: g.id, dari: p, sampai: q, status: g.status, tanggal: g.tanggal || "", pekerja: pk, catatan: String(g.catatan || "").trim() });
     });
+    const ekJ = S.hasEks ? eksJ.collect() : { list: null, firstBad: null };
+    if (ekJ.firstBad) { $("#jEksBox").open = true; firstBad ||= ekJ.firstBad; }
     if (firstBad) {
       if (draftJ.filter && firstBad.closest("tr.dim")) { draftJ.filter = ""; $("#jFilter").value = ""; renderRows(); }
       firstBad.focus(); toast("Periksa kolom yang ditandai merah.", true); return;
@@ -1515,6 +1559,7 @@ const CONFIG = {
       draftJ.orig.forEach((_, id) => { if (!now.has(id)) del++; });
       const parts = [add && `${add} segmen baru`, chg && `${chg} segmen diubah`, del && `${del} segmen dihapus`].filter(Boolean);
       if (draftJ.origRange !== fmtSTA(a) + "|" + fmtSTA(b)) parts.push(`rentang STA menjadi ${fmtSTA(a)} – ${fmtSTA(b)}`);
+      if (ekJ.list && JSON.stringify(ekJ.list) !== draftJ.origEks) parts.push(ekJ.list.length ? `eksisting ruas menjadi ${ekJ.list.length} lokasi (${fmtLen(eksTotal(ekJ.list))}), berlaku untuk semua jenis pekerjaan` : "eksisting ruas dihapus");
       const rr = byId(S.ruas, draftJ.ruasId);
       if (!(await confirmSave("Simpan perubahan segmen?", `${jDef().nama} · Ruas ${rr?.kode ?? ""}: ${parts.length ? parts.join(", ") : "perubahan detail segmen"}. Total ${draftJ.rows.length} segmen akan disimpan.`))) return;
     }
@@ -1526,6 +1571,7 @@ const CONFIG = {
     const prevItems = body.jenis?.[draftJ.jid]?.items || {};
     Object.keys(prevItems).forEach((iid) => { if (!jDef().items.some((it) => it.id === iid)) items[iid] = prevItems[iid]; });
     body.jenis = { ...(body.jenis || {}), [draftJ.jid]: { staAwal: a, staAkhir: b, items } };
+    if (ekJ.list) body.eksisting = ekJ.list;
     const btn = $("#btnSaveJ"); btn.disabled = true; btn.textContent = "Menyimpan…";
     const ok = await write(() => putDoc("ruas", r.id, body));
     btn.disabled = false; btn.textContent = "Simpan";
@@ -1916,4 +1962,4 @@ const CONFIG = {
 </script>
 </body>
 </html>
-<!-- kontinù build 2026-10-14 · panjang STA eksisting per kode ruas -->
+<!-- kontinù build 2026-10-14 · eksisting bisa diisi dari Edit segmen -->
