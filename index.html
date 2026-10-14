@@ -188,9 +188,9 @@ h1.title { margin: 0; font-size: clamp(26px, 3.4vw, 38px); font-weight: 800; let
 .sw.none { background: var(--track); }
 .sw.kum { background: var(--kum); }
 .sw.eks { background: repeating-linear-gradient(45deg, var(--eks) 0 1.5px, var(--eks-bg) 1.5px 5px); }
-.eks { position: absolute; top: 0; bottom: 0; z-index: 3; border-radius: 2px; background: repeating-linear-gradient(45deg, var(--eks) 0 1.5px, var(--eks-bg) 1.5px 5px); box-shadow: inset 0 0 0 1px var(--eks); }
-.eks.start { border-top-left-radius: 999px; border-bottom-left-radius: 999px; }
-.eks.end { border-top-right-radius: 999px; border-bottom-right-radius: 999px; }
+.track > .eks { position: absolute; top: 0; bottom: 0; z-index: 3; border-radius: 2px; background: repeating-linear-gradient(45deg, var(--eks) 0 1.5px, var(--eks-bg) 1.5px 5px); box-shadow: inset 0 0 0 1px var(--eks); }
+.track > .eks.start { border-top-left-radius: 999px; border-bottom-left-radius: 999px; }
+.track > .eks.end { border-top-right-radius: 999px; border-bottom-right-radius: 999px; }
 .seg { z-index: 1; }
 .eks-note { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
 .eks-note .sw { width: 18px; height: 9px; }
@@ -1962,4 +1962,4 @@ const CONFIG = {
 </script>
 </body>
 </html>
-<!-- kontinù build 2026-10-14 · eksisting bisa diisi dari Edit segmen -->
+<!-- kontinù build 2026-10-14 · perbaikan posisi legenda eksisting -->
