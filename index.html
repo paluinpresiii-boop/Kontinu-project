@@ -202,6 +202,17 @@ h1.title { margin: 0; font-size: clamp(26px, 3.4vw, 38px); font-weight: 800; let
 .eks-row .err { grid-column: 1 / -1; }
 @media (max-width: 560px) { .eks-row { grid-template-columns: 1fr auto 1fr auto; } .eks-row [data-ek] { grid-column: 1 / -2; } .eks-row .len { display: none; } }
 .eks-empty { font-size: 13px; color: var(--muted); padding: 4px 0; }
+/* Segmen yang tumpang tindih dengan eksisting */
+.track > .seg.ov { z-index: 2; outline: 2px solid var(--danger); outline-offset: 1px; } /* garis merah di luar bar tetap terlihat; arsir eksisting (z 3) tetap di atas */
+.ov-badge { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); }
+.ov-badge svg.i { width: 14px; height: 14px; }
+.ov-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); cursor: pointer; border: 0; }
+.ov-chip svg.i { width: 14px; height: 14px; }
+.segtable tr.ovl td { background: color-mix(in srgb, var(--danger) 7%, transparent); }
+.segtable tr.ovl td.n { color: var(--danger); font-weight: 700; }
+.segtable .warn { display: block; margin-top: 4px; font-size: 12px; font-weight: 500; color: var(--danger); max-width: 260px; }
+.segtable .warn:empty { display: none; }
+.tip .warnline { color: #ffb4b4; font-weight: 600; }
 .eks-box { border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; }
 .eks-box > summary { cursor: pointer; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; list-style: none; min-height: 28px; }
 .eks-box > summary::-webkit-details-marker { display: none; }
@@ -480,6 +491,7 @@ svg.gbtn { width: 16px; height: 16px; flex: none; }
       </div>
       <div class="seg-head">
         <h3>Segmen STA</h3><span class="cnt" id="jSegCount"></span>
+        <button type="button" class="ov-chip" id="jOvCount" hidden title="Tampilkan segmen pertama yang tumpang tindih"></button>
         <span data-nodirty><label class="sr" for="jFilter">Tampilkan item</label><select id="jFilter" class="seg-filter"></select></span>
         <button type="button" class="btn btn-sm" id="btnAddRow"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>Tambah segmen</button>
       </div>
@@ -698,6 +710,7 @@ const CONFIG = {
     copy: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
     bars: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h12M3 18h7"/></svg>',
     x: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+    alert: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>',
   };
 
   const DEFAULT_MASTER = [
@@ -782,8 +795,12 @@ const CONFIG = {
       const done = part(segs, "selesai"), prog = part(segs, "proses");
       return { it, segs, done, prog, pct: T ? (done / T) * 100 : L ? 100 : 0, pctProg: T ? (prog / T) * 100 : 0 };
     });
-    return { a, b, L, EL, T, eks: eks || [], items, kum: mean(items.map((x) => x.pct)) };
+    return { a, b, L, EL, T, eks: eks || [], items, kum: mean(items.map((x) => x.pct)), ovN: countOv(items.flatMap((x) => x.segs), eks) };
   }
+  // eksisting yang beririsan (panjang irisan > 0) dengan rentang dari–sampai
+  const ovEks = (dari, sampai, eks) => (eks || []).filter((e) => Math.min(+sampai, +e.sampai) > Math.max(+dari, +e.dari));
+  const fmtEks = (list) => list.map((e) => `${fmtSTA(e.dari)}–${fmtSTA(e.sampai)}`).join(", ");
+  const countOv = (segsList, eks) => segsList.reduce((n, g) => n + (ovEks(g.dari, g.sampai, eks).length ? 1 : 0), 0);
   const eksLabel = (c) => (c.EL > 0 ? ` · eksisting ${fmtLen(c.EL)} · target ${fmtLen(c.T)}` : "");
   const jenisOf = (r) => S.master.filter((j) => r.jenis && r.jenis[j.id]);
   function rollup(list) {
@@ -833,15 +850,16 @@ const CONFIG = {
     clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), bad ? 5000 : 3000);
   }
 
-  function segsHTML(segs, a, L, attrs, interactive) {
+  function segsHTML(segs, a, L, attrs, interactive, eks) {
     if (!(L > 0)) return "";
     let out = "";
     segs.forEach((g, i) => {
       const p = Math.max(+g.dari, a), q = Math.min(+g.sampai, a + L);
       if (!(isFinite(p) && isFinite(q) && q > p)) return;
       const left = ((p - a) / L) * 100, w = ((q - p) / L) * 100;
-      const cls = ["seg", g.status === "proses" ? "prog" : "", left <= 0.01 ? "start" : "", left + w >= 99.99 ? "end" : ""].join(" ");
-      const lab = `STA ${fmtSTA(g.dari)} sampai ${fmtSTA(g.sampai)}, ${g.status === "proses" ? "dalam proses" : "selesai"}`;
+      const ov = ovEks(g.dari, g.sampai, eks).length > 0;
+      const cls = ["seg", g.status === "proses" ? "prog" : "", left <= 0.01 ? "start" : "", left + w >= 99.99 ? "end" : "", ov ? "ov" : ""].join(" ");
+      const lab = `STA ${fmtSTA(g.dari)} sampai ${fmtSTA(g.sampai)}, ${g.status === "proses" ? "dalam proses" : "selesai"}${ov ? ", tumpang tindih dengan eksisting" : ""}`;
       const at = `class="${cls}" style="left:${left}%;width:${w}%" ${attrs} data-seg="${i}" aria-label="${esc(lab)}"`;
       out += interactive ? `<button type="button" ${at}></button>` : `<span ${at} tabindex="0" role="img"></span>`;
     });
@@ -889,7 +907,7 @@ const CONFIG = {
     c.items.forEach((x) => {
       const attrs = `data-ruas="${esc(r.id)}" data-jenis="${esc(j.id)}" data-item="${esc(x.it.id)}"`;
       h += `<div class="irow"><div class="lab">${esc(x.it.nama)}</div>
-        <div class="bar"><div class="track" role="img" aria-label="${esc(x.it.nama)}: ${fmtPct(x.pct)} selesai">${segsHTML(x.segs, c.a, c.L, attrs, interactive)}${eksHTML(c.eks, c.a, c.L, r.id)}</div></div>
+        <div class="bar"><div class="track" role="img" aria-label="${esc(x.it.nama)}: ${fmtPct(x.pct)} selesai">${segsHTML(x.segs, c.a, c.L, attrs, interactive, c.eks)}${eksHTML(c.eks, c.a, c.L, r.id)}</div></div>
         <div class="pc">${fmtPct(x.pct)}${x.prog ? `<small>+${fmtPct(x.pctProg)} proses</small>` : ""}</div></div>`;
     });
     h += `<div class="irow rl"><div class="lab"></div><div class="bar"><div class="ruler" aria-hidden="true">${rulerHTML(c.a, c.L)}</div></div><div class="pc"></div></div>`;
@@ -999,7 +1017,7 @@ const CONFIG = {
         const empty = !c.items.some((x) => x.segs.length);
         h += `<section class="jblock" aria-label="${esc(j.nama)}">
           <div class="jhead">
-            <div><h3>${esc(j.nama)}</h3><div class="sta mono">STA ${fmtSTA(c.a)} – ${fmtSTA(c.b)} · ${fmtLen(c.L)}${eksLabel(c)}</div></div>
+            <div><h3>${esc(j.nama)}</h3><div class="sta mono">STA ${fmtSTA(c.a)} – ${fmtSTA(c.b)} · ${fmtLen(c.L)}${eksLabel(c)}</div>${c.ovN ? `<div class="ov-badge" role="status">${ICON.alert}${c.ovN} segmen tumpang tindih eksisting · segera ganti</div>` : ""}</div>
             <div class="r"><div class="kumv"><b>${fmtPct(c.kum)}</b><span>${c.items.length > 1 ? "kumulatif" : "selesai"}</span></div>
               <button type="button" class="btn btn-xs" data-act="edit-jenis" data-id="${esc(r.id)}" data-jenis="${esc(j.id)}" data-edit>${empty ? ICON.plus + "Isi segmen" : ICON.bars + "Edit segmen"}</button></div>
           </div>
@@ -1037,7 +1055,8 @@ const CONFIG = {
       ${it ? `<div>${esc(it.nama)}</div>` : ""}
       ${g.tanggal ? `<div class="mut">${esc(new Date(g.tanggal + "T00:00").toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }))}</div>` : ""}
       ${g.pekerja != null && g.pekerja !== "" ? `<div>${esc(nf.format(+g.pekerja))} pekerja</div>` : ""}
-      ${g.catatan ? `<div class="mut">${esc(g.catatan)}</div>` : ""}`;
+      ${g.catatan ? `<div class="mut">${esc(g.catatan)}</div>` : ""}
+      ${el.classList.contains("ov") ? `<div class="warnline">Tumpang tindih dengan eksisting · segera ganti STA segmen ini</div>` : ""}`;
     placeTip(el);
   }
   function placeTip(el) {
@@ -1290,9 +1309,13 @@ const CONFIG = {
       if (e.target.matches("[data-ek]")) d.ket = e.target.value;
       lenOf(i); onChange();
     });
-    listEl.addEventListener("click", (e) => {
+    listEl.addEventListener("click", async (e) => {
       const b = e.target.closest("[data-edel]"); if (!b) return;
-      const rows = getRows(), i = +b.closest("[data-k]").dataset.k; rows.splice(i, 1); render(); onChange();
+      const rows = getRows(), i = +b.closest("[data-k]").dataset.k, d = rows[i];
+      if (d.dTxt.trim() || d.sTxt.trim() || d.ket.trim()) {
+        if (!(await confirmBox(`Hapus eksisting #${i + 1}?`, `STA ${d.dTxt || "?"} – ${d.sTxt || "?"}${d.ket.trim() ? ` (${d.ket.trim()})` : ""}. Lokasi ini kembali dihitung sebagai target pekerjaan setelah Anda menekan Simpan.`))) return;
+      }
+      rows.splice(i, 1); render(); onChange();
       (row(Math.min(i, rows.length - 1))?.querySelector("[data-ed]") || addBtn).focus();
     });
     addBtn.addEventListener("click", () => {
@@ -1356,11 +1379,13 @@ const CONFIG = {
     Object.keys(draftR.jenis || {}).forEach((jid) => { if (!S.master.some((j) => j.id === jid)) jenis[jid] = draftR.jenis[jid]; });
     if (firstBad) { firstBad.focus(); return; }
     if (!isDirty(dlgRuas)) { dlgRuas.close(); toast("Tidak ada perubahan"); return; }
-    if (dropped.length) { if (!(await confirmBox("Simpan dan hapus jenis pekerjaan?", `Segmen pada ${dropped.join(", ")} di ruas ini akan ikut terhapus.`, "Simpan & hapus", { no: "Kembali" }))) return; }
+    const ovAll = countOv(Object.values(jenis).flatMap((bl) => Object.values(bl.items || {}).flat()), eksisting);
+    const ovTxt = ovAll ? ` Perhatian: ${ovAll} segmen tumpang tindih dengan eksisting dan akan ditandai untuk segera diganti.` : "";
+    if (dropped.length) { if (!(await confirmBox("Simpan dan hapus jenis pekerjaan?", `Segmen pada ${dropped.join(", ")} di ruas ini akan ikut terhapus.${ovTxt}`, "Simpan & hapus", { no: "Kembali" }))) return; }
     else {
       const jn = S.master.filter((j) => jenis[j.id]).map((j) => j.nama.replace(/^Pekerjaan\s+/i, ""));
       const eksTxt = eksisting.length ? ` Eksisting ${eksisting.length} lokasi (${fmtLen(eksTotal(eksisting))}) dikeluarkan dari target.` : "";
-      if (!(await confirmSave(draftR.isNew ? "Tambah kode ruas?" : "Simpan perubahan kode ruas?", `Ruas “${kode}”${jn.length ? ` dengan jenis pekerjaan: ${jn.join(", ")}` : " tanpa jenis pekerjaan"} akan disimpan.${eksTxt}`))) return;
+      if (!(await confirmSave(draftR.isNew ? "Tambah kode ruas?" : "Simpan perubahan kode ruas?", `Ruas “${kode}”${jn.length ? ` dengan jenis pekerjaan: ${jn.join(", ")}` : " tanpa jenis pekerjaan"} akan disimpan.${eksTxt}${ovTxt}`))) return;
     }
     const body = { diId: $("#rDi").value, kode, ket: $("#rKet").value.trim(), order: draftR.order ?? Date.now(), jenis, eksisting: S.hasEks ? eksisting : (draftR.eksisting || []) };
     if (draftR.wasContoh && $("#rContoh").checked) body.contoh = true;
@@ -1390,7 +1415,7 @@ const CONFIG = {
     // urutkan berdasarkan tanggal pengerjaan: terdahulu → terbaru (tanpa tanggal di akhir), lalu urutan item, lalu STA
     const itemIdx = (id) => j.items.findIndex((it) => it.id === id);
     rows.sort((p, q) => (p.tanggal || "9999") .localeCompare(q.tanggal || "9999") || itemIdx(p.item) - itemIdx(q.item) || parseSTA(p.dariTxt) - parseSTA(q.dariTxt));
-    draftJ = { ruasId, jid, awalTxt: fmtSTA(b.staAwal), akhirTxt: fmtSTA(b.staAkhir), rows, filter: "", orig: new Map(rows.map((g) => [g.id, JSON.stringify(g)])), origRange: fmtSTA(b.staAwal) + "|" + fmtSTA(b.staAkhir) };
+    draftJ = { ruasId, jid, awalTxt: fmtSTA(b.staAwal), akhirTxt: fmtSTA(b.staAkhir), rows, filter: "", orig: new Map(rows.map((g) => [g.id, JSON.stringify(g)])), origSta: new Map(rows.map((g) => [g.id, g.dariTxt + "|" + g.sampaiTxt])), origRange: fmtSTA(b.staAwal) + "|" + fmtSTA(b.staAkhir) };
     draftJ.eksRows = toEksRows(r.eksisting);
     draftJ.origEks = JSON.stringify(eksJ.parsed());
     eksJ.render(); eksSummary();
@@ -1412,11 +1437,11 @@ const CONFIG = {
   function renderRows() {
     const j = jDef(); const body = $("#jBody");
     $("#jSegCount").textContent = draftJ.rows.length ? `${draftJ.rows.length} segmen` : "";
-    if (!draftJ.rows.length) { body.innerHTML = `<tr><td colspan="9" class="seg-empty">Belum ada segmen. Tambahkan rentang STA yang sudah atau sedang dikerjakan untuk tiap item.</td></tr>`; return; }
+    if (!draftJ.rows.length) { body.innerHTML = `<tr><td colspan="9" class="seg-empty">Belum ada segmen. Tambahkan rentang STA yang sudah atau sedang dikerjakan untuk tiap item.</td></tr>`; markOverlaps(); return; }
     const opts = (sel) => j.items.map((it) => `<option value="${esc(it.id)}"${it.id === sel ? " selected" : ""}>${esc(it.nama)}</option>`).join("");
     body.innerHTML = draftJ.rows.map((g, i) => `<tr data-i="${i}"${draftJ.filter && g.item !== draftJ.filter ? ' class="dim"' : ""}>
       <td class="n">${i + 1}</td>
-      <td><select class="inp" data-f="item" aria-label="Segmen ${i + 1}, item pekerjaan" style="min-width:220px">${opts(g.item)}</select></td>
+      <td><select class="inp" data-f="item" aria-label="Segmen ${i + 1}, item pekerjaan" style="min-width:220px">${opts(g.item)}</select><small class="warn" data-ovw role="status"></small></td>
       <td><input class="inp mono" data-f="dariTxt" value="${esc(g.dariTxt)}" aria-label="Segmen ${i + 1}, dari STA" inputmode="decimal" style="width:108px"><small class="err" data-err></small></td>
       <td><input class="inp mono" data-f="sampaiTxt" value="${esc(g.sampaiTxt)}" aria-label="Segmen ${i + 1}, sampai STA" inputmode="decimal" style="width:108px"></td>
       <td class="len" data-len></td>
@@ -1430,7 +1455,25 @@ const CONFIG = {
     draftJ.rows.forEach((_, i) => updateLen(i));
     const shown = draftJ.filter ? draftJ.rows.filter((g) => g.item === draftJ.filter).length : draftJ.rows.length;
     $("#jSegCount").textContent = draftJ.filter ? `${shown} dari ${draftJ.rows.length} segmen` : `${draftJ.rows.length} segmen`;
+    markOverlaps();
   }
+  // tandai baris yang tumpang tindih dengan eksisting (pakai daftar eksisting yang sedang diedit)
+  function markOverlaps() {
+    if (!draftJ) return;
+    const eks = draftJ.eksRows ? eksJ.parsed() : []; let n = 0;
+    draftJ.rows.forEach((g, i) => {
+      const ov = ovEks(parseSTA(g.dariTxt), parseSTA(g.sampaiTxt), eks); if (ov.length) n++;
+      const tr = $(`#jBody tr[data-i="${i}"]`); if (!tr) return;
+      tr.classList.toggle("ovl", ov.length > 0);
+      const w = tr.querySelector("[data-ovw]"); if (w) w.textContent = ov.length ? `Tumpang tindih dengan eksisting ${fmtEks(ov)}. Segera ganti STA segmen ini.` : "";
+    });
+    const chip = $("#jOvCount"); chip.hidden = !n;
+    chip.innerHTML = n ? `${ICON.alert}${n} segmen tumpang tindih eksisting` : "";
+  }
+  $("#jOvCount").addEventListener("click", () => {
+    const eks = eksJ.parsed(); const g = draftJ.rows.find((x) => ovEks(parseSTA(x.dariTxt), parseSTA(x.sampaiTxt), eks).length);
+    if (g) focusRow(g.id);
+  });
   function focusRow(segId) {
     const i = draftJ.rows.findIndex((x) => x.id === segId); if (i < 0) return;
     if (draftJ.filter && draftJ.rows[i].item !== draftJ.filter) { draftJ.filter = ""; $("#jFilter").value = ""; renderRows(); }
@@ -1478,6 +1521,7 @@ const CONFIG = {
     const c = blockCalc(b, j, PV.eksisting);
     $("#jPv").innerHTML = crewHTML(c) + itemsHTML(PV, j, c, false);
     $("#jPvStat").textContent = `${c.items.length > 1 ? "Kumulatif" : "Selesai"} ${fmtPct(c.kum)} · ${fmtLen(c.L)}${eksLabel(c)}`;
+    markOverlaps();
   }
   function eksSummary() {
     const l = eksJ.parsed();
@@ -1496,10 +1540,13 @@ const CONFIG = {
     const f = e.target.dataset.f; if (f !== "item" && f !== "status") return;
     draftJ.rows[+e.target.closest("tr").dataset.i][f] = e.target.value; updateJPreview();
   });
-  $("#jBody").addEventListener("click", (e) => {
+  $("#jBody").addEventListener("click", async (e) => {
     const del = e.target.closest("[data-del]"), dup = e.target.closest("[data-dup]");
     if (del) {
-      const i = +del.dataset.del; draftJ.rows.splice(i, 1); renderRows(); updateJPreview();
+      const i = +del.dataset.del, g = draftJ.rows[i];
+      const itNama = jDef().items.find((it) => it.id === g.item)?.nama || "";
+      if (!(await confirmBox(`Hapus segmen #${i + 1}?`, `${itNama} · STA ${g.dariTxt} – ${g.sampaiTxt}. Segmen terhapus permanen setelah Anda menekan Simpan; tekan Batal di jendela ini untuk membatalkan semua perubahan.`))) return;
+      draftJ.rows.splice(i, 1); renderRows(); updateJPreview();
       ($(`#jBody tr[data-i="${Math.min(i, draftJ.rows.length - 1)}"] [data-f="dariTxt"]`) || $("#btnAddRow")).focus();
     } else if (dup) {
       const i = +dup.dataset.dup, src = draftJ.rows[i], items = jDef().items;
@@ -1530,6 +1577,9 @@ const CONFIG = {
     if (!isFinite(a)) bad($("#jAwal"), $("#jRangeErr"), "STA awal tidak terbaca. Contoh: 0+000.");
     else if (!isFinite(b)) bad($("#jAkhir"), $("#jRangeErr"), "STA akhir tidak terbaca. Contoh: 1+200.");
     else if (b <= a) bad($("#jAkhir"), $("#jRangeErr"), "STA akhir harus lebih besar dari STA awal.");
+    const ekJ = S.hasEks ? eksJ.collect() : { list: null, firstBad: null };
+    const eksNow = ekJ.list || byId(S.ruas, draftJ.ruasId)?.eksisting || [];
+    let oldOv = 0;
     const items = {};
     draftJ.rows.forEach((g, i) => {
       const tr = $(`#jBody tr[data-i="${i}"]`); const ia = tr.querySelector('[data-f="dariTxt"]'), ib = tr.querySelector('[data-f="sampaiTxt"]'), er = tr.querySelector("[data-err]");
@@ -1543,9 +1593,15 @@ const CONFIG = {
       const ip = tr.querySelector('[data-f="pekerja"]'), ep = tr.querySelector("[data-perr]");
       ip.removeAttribute("aria-invalid"); ep.textContent = "";
       if (pk !== null && !(Number.isInteger(pk) && pk >= 0)) return bad(ip, ep, "Isi bilangan bulat, mis. 12.");
+      // segmen baru / yang STA-nya diubah tidak boleh tumpang tindih dengan eksisting; segmen lama tetap boleh (ditandai)
+      const ov = ovEks(p, q, eksNow);
+      if (ov.length) {
+        const moved = !draftJ.origSta.has(g.id) || draftJ.origSta.get(g.id) !== fmtSTA(p) + "|" + fmtSTA(q);
+        if (moved) return bad(ia, er, `Tumpang tindih dengan eksisting ${fmtEks(ov)}. Ubah STA atau hapus segmen ini.`);
+        oldOv++;
+      }
       (items[g.item] ||= []).push({ id: g.id, dari: p, sampai: q, status: g.status, tanggal: g.tanggal || "", pekerja: pk, catatan: String(g.catatan || "").trim() });
     });
-    const ekJ = S.hasEks ? eksJ.collect() : { list: null, firstBad: null };
     if (ekJ.firstBad) { $("#jEksBox").open = true; firstBad ||= ekJ.firstBad; }
     if (firstBad) {
       if (draftJ.filter && firstBad.closest("tr.dim")) { draftJ.filter = ""; $("#jFilter").value = ""; renderRows(); }
@@ -1561,7 +1617,13 @@ const CONFIG = {
       if (draftJ.origRange !== fmtSTA(a) + "|" + fmtSTA(b)) parts.push(`rentang STA menjadi ${fmtSTA(a)} – ${fmtSTA(b)}`);
       if (ekJ.list && JSON.stringify(ekJ.list) !== draftJ.origEks) parts.push(ekJ.list.length ? `eksisting ruas menjadi ${ekJ.list.length} lokasi (${fmtLen(eksTotal(ekJ.list))}), berlaku untuk semua jenis pekerjaan` : "eksisting ruas dihapus");
       const rr = byId(S.ruas, draftJ.ruasId);
-      if (!(await confirmSave("Simpan perubahan segmen?", `${jDef().nama} · Ruas ${rr?.kode ?? ""}: ${parts.length ? parts.join(", ") : "perubahan detail segmen"}. Total ${draftJ.rows.length} segmen akan disimpan.`))) return;
+      let warn = "";
+      if (oldOv) warn += ` Perhatian: ${oldOv} segmen di jenis ini masih tumpang tindih dengan eksisting dan tetap ditandai untuk diganti.`;
+      if (ekJ.list && JSON.stringify(ekJ.list) !== draftJ.origEks && rr) {
+        const other = Object.entries(rr.jenis || {}).filter(([jid]) => jid !== draftJ.jid).reduce((n, [, bl]) => n + countOv(Object.values(bl.items || {}).flat(), ekJ.list), 0);
+        if (other) warn += ` Eksisting baru juga menimpa ${other} segmen di jenis pekerjaan lain; segmen tersebut akan ditandai.`;
+      }
+      if (!(await confirmSave("Simpan perubahan segmen?", `${jDef().nama} · Ruas ${rr?.kode ?? ""}: ${parts.length ? parts.join(", ") : "perubahan detail segmen"}. Total ${draftJ.rows.length} segmen akan disimpan.${warn}`))) return;
     }
     Object.values(items).forEach((arr) => arr.sort((x, y) => x.dari - y.dari));
     const r = byId(S.ruas, draftJ.ruasId);
@@ -1599,10 +1661,20 @@ const CONFIG = {
     if (e.target.matches("[data-jn]")) j.nama = e.target.value;
     if (e.target.matches("[data-in]")) j.items[+e.target.closest("[data-ii]").dataset.ii].nama = e.target.value;
   });
-  $("#sMaster").addEventListener("click", (e) => {
+  // jumlah segmen tersimpan pada satu jenis (atau satu item) pekerjaan, untuk pesan konfirmasi hapus
+  const segCountOf = (jid, iid) => S.ruas.reduce((n, r) => n + Object.entries(r.jenis?.[jid]?.items || {}).reduce((m, [k, a]) => m + (!iid || k === iid ? a.length : 0), 0), 0);
+  $("#sMaster").addEventListener("click", async (e) => {
     const box = e.target.closest("[data-ji]"); if (!box) return; const ji = +box.dataset.ji, j = draftM[ji];
-    if (e.target.closest("[data-jdel]")) { draftM.splice(ji, 1); renderMaster(); }
-    else if (e.target.closest("[data-idel]")) { j.items.splice(+e.target.closest("[data-ii]").dataset.ii, 1); renderMaster(); }
+    if (e.target.closest("[data-jdel]")) {
+      const n = segCountOf(j.id);
+      if (!(await confirmBox(`Hapus jenis “${j.nama || "tanpa nama"}”?`, `${j.items.length} item ikut terhapus dari daftar.${n ? ` ${n} segmen tersimpan pada jenis ini tidak akan ditampilkan lagi.` : ""} Perubahan berlaku setelah Anda menekan Simpan.`))) return;
+      draftM.splice(ji, 1); renderMaster();
+    }
+    else if (e.target.closest("[data-idel]")) {
+      const ii = +e.target.closest("[data-ii]").dataset.ii, it = j.items[ii], n = segCountOf(j.id, it.id);
+      if (it.nama.trim() || n) { if (!(await confirmBox(`Hapus item “${it.nama || "tanpa nama"}”?`, `${n ? `${n} segmen tersimpan pada item ini tidak akan ditampilkan lagi dan tidak dihitung dalam persen. ` : ""}Perubahan berlaku setelah Anda menekan Simpan.`))) return; }
+      j.items.splice(ii, 1); renderMaster();
+    }
     else if (e.target.closest("[data-iadd]")) { j.items.push({ id: "it-" + rid(), nama: "" }); renderMaster(); const ins = $$(`[data-ji="${ji}"] [data-in]`); ins[ins.length - 1]?.focus(); }
   });
   $("#sAddJ").addEventListener("click", () => { draftM.push({ id: "j-" + rid(), nama: "", items: [{ id: "it-" + rid(), nama: "" }] }); renderMaster(); $(`[data-ji="${draftM.length - 1}"] [data-jn]`).focus(); });
@@ -1962,4 +2034,4 @@ const CONFIG = {
 </script>
 </body>
 </html>
-<!-- kontinù build 2026-10-14 · perbaikan posisi legenda eksisting -->
+<!-- kontinù build 2026-10-14 · konfirmasi trash, validasi segmen vs eksisting -->
